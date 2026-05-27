@@ -24,6 +24,7 @@
 	let editingBarber: IBarber | null = $state(null);
 	let formData = $state({
 		name: '',
+		username: '',
 		email: '',
 		phone: '',
 		password: '',
@@ -61,7 +62,8 @@
 		const formDataObj = new FormData(e.target);
 		const data: any = {
 			name: formDataObj.get('name'),
-			email: formDataObj.get('email'),
+			username: formDataObj.get('username'),
+			email: formDataObj.get('email') || undefined,
 			phone: formDataObj.get('phone'),
 			specializations: formData.specializations,
 			bio: formDataObj.get('bio'),
@@ -127,7 +129,8 @@
 		if (barber) {
 			formData = {
 				name: barber.name,
-				email: barber.email,
+				username: barber.username,
+				email: barber.email || '',
 				password: '',
 				phone: barber.phone || '',
 				specializations: [...(barber.specializations || [])],
@@ -138,6 +141,7 @@
 		} else {
 			formData = {
 				name: '',
+				username: '',
 				email: '',
 				phone: '',
 				password: '',
@@ -173,7 +177,8 @@
 
 		const exportData = barbersList.map(b => ({
 			Nome: b.name,
-			Email: b.email,
+			Username: b.username,
+			Email: b.email || '-',
 			Telefono: b.phone || '-',
 			Specializzazioni: b.specializations?.join(', ') || '-',
 			Stato: b.isActive ? 'Attivo' : 'Disattivo'
@@ -275,16 +280,29 @@
 				/>
 			</div>
 			<div class="col-md-6 mb-3">
-				<label for="email" class="form-label">Email</label>
+				<label for="username" class="form-label">Username</label>
 				<input
-					type="email"
-					id="email"
-					name="email"
+					type="text"
+					id="username"
+					name="username"
 					class="form-control"
-					bind:value={formData.email}
+					bind:value={formData.username}
+					autocomplete="off"
 					required
 				/>
+				<div class="form-text">Identificativo univoco per l'accesso.</div>
 			</div>
+		</div>
+
+		<div class="mb-3">
+			<label for="email" class="form-label">Email <span class="text-muted">(opzionale)</span></label>
+			<input
+				type="email"
+				id="email"
+				name="email"
+				class="form-control"
+				bind:value={formData.email}
+			/>
 		</div>
 
 		{#if !editingBarber}

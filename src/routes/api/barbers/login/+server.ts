@@ -1,27 +1,22 @@
 import { apiResponse } from '$lib/server/api';
 import type { RequestHandler } from './$types';
 import { BarberService } from '$lib/services/barberService';
-import { verifyDemoBarber, isDemoBarberEmail } from '$lib/server/demoAuth';
 import type { IBarber } from '$lib/types';
 
 // POST /api/barbers/login - Login per i barbieri
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
 		const data = await request.json();
-		const { email, password } = data;
+		const { username, password } = data;
 
-		if (!email || !password) {
+		if (!username || !password) {
 			return apiResponse<null>(
-				{ success: false, error: 'Email e password sono obbligatori' },
+				{ success: false, error: 'Username e password sono obbligatori' },
 				{ status: 400 }
 			);
 		}
 
-		// Demo barber login: verified in-memory (no MongoDB), password "demo123".
-		// Demo emails never touch the DB; real accounts use the DB-backed service.
-		const barber = isDemoBarberEmail(email)
-			? verifyDemoBarber(email, password)
-			: await BarberService.loginBarber(email, password);
+		const barber = await BarberService.loginBarber(username, password);
 
 		if (barber) {
 			// Crea una sessione per il barbiere

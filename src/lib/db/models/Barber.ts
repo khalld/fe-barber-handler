@@ -4,7 +4,8 @@ import type { IBarber } from '../../types';
 const BarberSchema = new Schema(
 	{
 		name: { type: String, required: true },
-		email: { type: String, required: true, unique: true },
+		username: { type: String, required: true, unique: true, lowercase: true, trim: true },
+		email: { type: String, unique: true, sparse: true },
 		password: { type: String, select: false },
 		phone: { type: String },
 		specializations: { type: [String], default: [] },
@@ -27,7 +28,7 @@ const BarberSchema = new Schema(
 );
 
 // Indici per ricerche veloci
-BarberSchema.index({ email: 1 });
+BarberSchema.index({ username: 1 });
 BarberSchema.index({ isActive: 1 });
 
 export const Barber = mongoose.models.Barber || mongoose.model<IBarber & Document>('Barber', BarberSchema);

@@ -1,7 +1,6 @@
 import { apiResponse } from '$lib/server/api';
 import type { RequestHandler } from './$types';
 import { DashboardService } from '$lib/services/dashboardService';
-import { DEMO_BARBER_ID, getDemoBarberDashboard } from '$lib/server/demoAuth';
 import type { IDashboardStats } from '$lib/types';
 
 // GET /api/dashboard
@@ -20,10 +19,6 @@ export const GET: RequestHandler = async ({ url }) => {
 
 		// Dashboard di un barbiere specifico
 		if (barberId) {
-			// Demo barber: synthetic data, no MongoDB.
-			if (barberId === DEMO_BARBER_ID) {
-				return apiResponse<any>({ success: true, data: getDemoBarberDashboard() });
-			}
 			const daysRange = parseInt(url.searchParams.get('daysRange') || '30');
 			const data = await DashboardService.getBarberDashboard(barberId, daysRange);
 			return apiResponse<any>({ success: true, data });

@@ -54,8 +54,8 @@
 	});
 
 	async function handleConfirmBooking() {
-		if (!editedData.name || !editedData.email || !editedData.phone) {
-			toastMessage = 'Completa tutti i dati personali';
+		if (!editedData.name || !editedData.phone) {
+			toastMessage = 'Nome e telefono sono obbligatori';
 			toastType = 'warning';
 			return;
 		}
@@ -173,13 +173,12 @@
 								/>
 							</div>
 							<div class="mb-3">
-								<label for="email" class="form-label">Email</label>
+								<label for="email" class="form-label">Email <span class="text-muted">(opzionale)</span></label>
 								<input
 									type="email"
 									id="email"
 									class="form-control"
 									bind:value={editedData.email}
-									required
 								/>
 							</div>
 							<div class="mb-3">

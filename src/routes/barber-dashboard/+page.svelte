@@ -45,7 +45,7 @@
 			<h1 class="h3 mb-1">
 				<i class="bi bi-grid me-2"></i>La mia Dashboard
 			</h1>
-			<p class="text-muted">{barber.email}</p>
+			<p class="text-muted">@{barber.username}</p>
 		</div>
 
 		{#if loading}

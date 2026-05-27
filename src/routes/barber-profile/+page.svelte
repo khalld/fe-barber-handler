@@ -34,8 +34,8 @@
 
 	async function handleSaveProfile(e: Event) {
 		e.preventDefault();
-		if (!name || !email) {
-			toastMessage = 'Nome ed email sono obbligatori';
+		if (!name) {
+			toastMessage = 'Il nome è obbligatorio';
 			toastType = 'warning';
 			return;
 		}
@@ -49,7 +49,7 @@
 
 			const result = await apiCall(`/barbers/${barber._id}`, {
 				method: 'PUT',
-				body: JSON.stringify({ name, email, phone, bio, specializations: specs })
+				body: JSON.stringify({ name, email: email || undefined, phone, bio, specializations: specs })
 			});
 
 			if (result.success) {
@@ -146,8 +146,12 @@
 									<p class="mb-0 fw-semibold">{name}</p>
 								</div>
 								<div class="col-md-6">
+									<label class="text-muted small fw-semibold">Username</label>
+									<p class="mb-0">@{barber.username}</p>
+								</div>
+								<div class="col-md-6">
 									<label class="text-muted small fw-semibold">Email</label>
-									<p class="mb-0">{email}</p>
+									<p class="mb-0">{email || 'Non specificata'}</p>
 								</div>
 								<div class="col-md-6">
 									<label class="text-muted small fw-semibold">Telefono</label>
@@ -191,13 +195,23 @@
 										/>
 									</div>
 									<div class="col-md-6">
-										<label for="profEmail" class="form-label fw-semibold">Email</label>
+										<label for="profUsername" class="form-label fw-semibold">Username</label>
+										<input
+											type="text"
+											id="profUsername"
+											class="form-control"
+											value={'@' + barber.username}
+											disabled
+										/>
+										<small class="text-muted">Lo username non è modificabile.</small>
+									</div>
+									<div class="col-md-6">
+										<label for="profEmail" class="form-label fw-semibold">Email <span class="text-muted">(opzionale)</span></label>
 										<input
 											type="email"
 											id="profEmail"
 											class="form-control"
 											bind:value={email}
-											required
 										/>
 									</div>
 									<div class="col-md-6">

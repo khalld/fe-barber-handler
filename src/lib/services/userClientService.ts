@@ -5,19 +5,23 @@ import type { IUser, IAppointment } from '../types';
 import { connectDB } from '../db/mongodb';
 
 export class UserClientService {
-	static async registerUser(userData: {
+	// Crea un account cliente. Riservato al gestore: non esiste auto-registrazione.
+	static async createUser(userData: {
 		name: string;
-		email: string;
+		username: string;
 		phone: string;
 		password: string;
+		email?: string;
 	}): Promise<IUser | null> {
 		await connectDB();
 
 		try {
-			// Check if user already exists
-			const existingUser = await UserClient.findOne({ email: userData.email });
+			const username = userData.username.toLowerCase().trim();
+
+			// Check if username already exists
+			const existingUser = await UserClient.findOne({ username });
 			if (existingUser) {
-				throw new Error('Email già registrata');
+				throw new Error('Username già in uso');
 			}
 
 			// Hash password
@@ -27,7 +31,8 @@ export class UserClientService {
 			// Create new user
 			const user = new UserClient({
 				name: userData.name,
-				email: userData.email,
+				username,
+				email: userData.email || undefined,
 				phone: userData.phone,
 				password: hashedPassword,
 				appointments: [],
@@ -38,16 +43,16 @@ export class UserClientService {
 			await user.save();
 			return user.toObject();
 		} catch (error) {
-			console.error('Errore nella registrazione:', error);
+			console.error('Errore nella creazione utente:', error);
 			throw error;
 		}
 	}
 
-	static async loginUser(email: string, password: string): Promise<IUser | null> {
+	static async loginUser(username: string, password: string): Promise<IUser | null> {
 		await connectDB();
 
 		try {
-			const user = await UserClient.findOne({ email: email.toLowerCase() });
+			const user = await UserClient.findOne({ username: username.toLowerCase().trim() });
 			if (!user) {
 				return null;
 			}
@@ -69,18 +74,6 @@ export class UserClientService {
 
 		try {
 			const user = await UserClient.findById(userId);
-			return user ? user.toObject() : null;
-		} catch (error) {
-			console.error('Errore nel recupero utente:', error);
-			throw error;
-		}
-	}
-
-	static async getUserByEmail(email: string): Promise<IUser | null> {
-		await connectDB();
-
-		try {
-			const user = await UserClient.findOne({ email: email.toLowerCase() });
 			return user ? user.toObject() : null;
 		} catch (error) {
 			console.error('Errore nel recupero utente:', error);

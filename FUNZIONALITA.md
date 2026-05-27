@@ -25,7 +25,7 @@ Accesso riservato al titolare del negozio. Visione completa su tutta l'attività
 
 ### Barbieri
 - Elenco dei collaboratori con stato attivo o inattivo
-- Aggiunta di un nuovo barbiere: nome, email, telefono, password, tariffa oraria, bio e specializzazioni
+- Aggiunta di un nuovo barbiere: nome, username (per l'accesso), password, telefono, email (opzionale), tariffa oraria, bio e specializzazioni
 - Impostazione degli orari di lavoro per ogni giorno della settimana (con possibilità di indicare giorno di chiusura)
 - Modifica dei dati in qualsiasi momento
 - Disattivazione di un barbiere (non appare più ai clienti, ma i dati vengono conservati)
@@ -39,10 +39,10 @@ Accesso riservato al titolare del negozio. Visione completa su tutta l'attività
 - Aggiunta, modifica ed eliminazione di qualsiasi voce
 - Esportazione in formato Excel/CSV
 
-### Utenti (Clienti Registrati)
-- Elenco dei clienti che hanno creato un account, con nome, email, telefono e numero di prenotazioni
-- Ricerca rapida per nome, email o telefono
-- Creazione manuale di un account cliente
+### Utenti (Clienti)
+- Elenco dei clienti, con nome, username, email (opzionale), telefono e numero di prenotazioni
+- Ricerca rapida per nome, username, email o telefono
+- Creazione manuale di un account cliente (nome, username, password, telefono ed email opzionale) — **non esiste auto-registrazione**
 - Eliminazione di un account
 - Esportazione in formato Excel/CSV
 
@@ -68,7 +68,7 @@ Accesso personale per ogni collaboratore. Visualizza solo i propri dati.
 - Classifica dei servizi più richiesti con numero di prenotazioni e relativo guadagno
 
 ### Profilo
-- Modifica di nome, email e telefono
+- Modifica di nome, email (opzionale) e telefono — lo username di accesso non è modificabile
 - Aggiornamento della bio (testo di presentazione visibile ai clienti)
 - Gestione delle specializzazioni (es. Taglio, Barba, Colore)
 - Cambio password (richiede la password attuale per conferma)
@@ -87,9 +87,9 @@ Il cliente può prenotare in 3 passi senza dover registrarsi:
 
 La prenotazione viene salvata e appare nell'area del gestore.
 
-### Registrazione e Login
-- Creazione di un account con nome, email, telefono e password
-- Accesso con email e password
+### Login
+- Accesso con **username e password**
+- L'account viene creato dal gestore: **non è disponibile l'auto-registrazione**
 
 ### Prenota con Account
 - Stessa procedura della prenotazione ospite, ma la prenotazione viene collegata all'account del cliente

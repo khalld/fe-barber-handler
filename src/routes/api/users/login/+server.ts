@@ -1,27 +1,22 @@
 import { apiResponse } from '$lib/server/api';
 import type { RequestHandler } from './$types';
 import { UserClientService } from '$lib/services/userClientService';
-import { verifyDemoClient, isDemoClientEmail } from '$lib/server/demoAuth';
 import type { IUser } from '$lib/types';
 
 // POST /api/users/login - Login utente
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
 		const data = await request.json();
-		const { email, password } = data;
+		const { username, password } = data;
 
-		if (!email || !password) {
+		if (!username || !password) {
 			return apiResponse<null>(
-				{ success: false, error: 'Email e password sono obbligatori' },
+				{ success: false, error: 'Username e password sono obbligatori' },
 				{ status: 400 }
 			);
 		}
 
-		// Demo client login: verified in-memory (no MongoDB), password "demo123".
-		// Demo emails never touch the DB; real accounts use the DB-backed service.
-		const user = isDemoClientEmail(email)
-			? verifyDemoClient(email, password)
-			: await UserClientService.loginUser(email, password);
+		const user = await UserClientService.loginUser(username, password);
 
 		if (user) {
 			// Crea una sessione per l'utente

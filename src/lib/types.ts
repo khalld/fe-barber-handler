@@ -10,7 +10,8 @@ export interface ApiResponse<T> {
 export interface IBarber {
 	_id?: string;
 	name: string;
-	email: string;
+	username: string; // Identificativo univoco per il login
+	email?: string; // Contatto opzionale (non usato per il login)
 	password?: string; // Hash della password — escluso dalle risposte API
 	phone?: string;
 	specializations: string[]; // es: "Taglio", "Barba", "Colore"
@@ -101,7 +102,8 @@ export interface IActivityLog {
 export interface IUser {
 	_id?: string;
 	name: string;
-	email: string;
+	username: string; // Identificativo univoco per il login
+	email?: string; // Contatto opzionale (non usato per il login)
 	phone: string;
 	password?: string; // Hash della password
 	appointments: string[]; // IDs delle prenotazioni

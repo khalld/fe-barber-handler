@@ -26,11 +26,11 @@ export class BarberService {
 		}
 	}
 
-	// Login barbiere: verifica email e password
-	static async loginBarber(email: string, password: string): Promise<IBarber | null> {
+	// Login barbiere: verifica username e password
+	static async loginBarber(username: string, password: string): Promise<IBarber | null> {
 		try {
 			await connectDB();
-			const barber = await Barber.findOne({ email: email.toLowerCase(), isActive: true }).select('+password');
+			const barber = await Barber.findOne({ username: username.toLowerCase().trim(), isActive: true }).select('+password');
 			if (!barber) return null;
 
 			const isValid = await bcrypt.compare(password, barber.password || '');

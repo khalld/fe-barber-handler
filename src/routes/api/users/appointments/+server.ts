@@ -2,7 +2,6 @@ import { apiResponse } from '$lib/server/api';
 import type { RequestHandler } from './$types';
 import { AppointmentService } from '$lib/services/appointmentService';
 import { UserClientService } from '$lib/services/userClientService';
-import { DEMO_CLIENT_ID } from '$lib/server/demoAuth';
 import type { IAppointment } from '$lib/types';
 
 // GET /api/users/appointments?userId=xxx - Ottiene prenotazioni dell'utente
@@ -15,11 +14,6 @@ export const GET: RequestHandler = async ({ url }) => {
 				{ success: false, error: 'userId obbligatorio' },
 				{ status: 400 }
 			);
-		}
-
-		// Demo client is an in-memory account with no DB record; it has no appointments.
-		if (userId === DEMO_CLIENT_ID) {
-			return apiResponse<IAppointment[]>({ success: true, data: [] });
 		}
 
 		const appointments = await UserClientService.getUserAppointments(userId);
@@ -68,10 +62,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			paymentStatus: 'pending'
 		});
 
-		// Aggiungi alla lista prenotazioni dell'utente (il client demo non ha record DB)
-		if (userId !== DEMO_CLIENT_ID) {
-			await UserClientService.addAppointmentToUser(userId, appointment?._id || '');
-		}
+		// Aggiungi alla lista prenotazioni dell'utente
+		await UserClientService.addAppointmentToUser(userId, appointment?._id || '');
 
 		return apiResponse<IAppointment>(
 			{
@@ -106,10 +98,8 @@ export const DELETE: RequestHandler = async ({ url }) => {
 		// Cancella la prenotazione
 		await AppointmentService.deleteAppointment(appointmentId);
 
-		// Rimuovi dalla lista prenotazioni dell'utente (il client demo non ha record DB)
-		if (userId !== DEMO_CLIENT_ID) {
-			await UserClientService.removeAppointmentFromUser(userId, appointmentId);
-		}
+		// Rimuovi dalla lista prenotazioni dell'utente
+		await UserClientService.removeAppointmentFromUser(userId, appointmentId);
 
 		return apiResponse<null>({
 			success: true,

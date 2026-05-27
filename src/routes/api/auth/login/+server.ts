@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 import type { ApiResponse } from '$lib/types';
-import { verifyDemoAdmin } from '$lib/server/demoAuth';
+import { AdminService } from '$lib/services/adminService';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	try {
@@ -18,25 +18,24 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			);
 		}
 
-		// Demo admin login: verified in-memory (no MongoDB), password "demo123".
-		if (verifyDemoAdmin(username, password)) {
-			{
-				// Crea sessione
-				const sessionId = Math.random().toString(36).substring(2, 15);
-				cookies.set('session_id', sessionId, {
-					path: '/',
-					httpOnly: true,
-					secure: process.env.NODE_ENV === 'production',
-					sameSite: 'lax',
-					maxAge: 60 * 60 * 24 * 7 // 7 giorni
-				});
+		// Login gestore verificato sul database (modello User, isAdmin).
+		const admin = await AdminService.loginAdmin(username, password);
+		if (admin) {
+			// Crea sessione
+			const sessionId = Math.random().toString(36).substring(2, 15);
+			cookies.set('session_id', sessionId, {
+				path: '/',
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'lax',
+				maxAge: 60 * 60 * 24 * 7 // 7 giorni
+			});
 
-				return json({
-					success: true,
-					message: 'Login effettuato con successo',
-					data: { username, isAdmin: true }
-				} as ApiResponse<any>);
-			}
+			return json({
+				success: true,
+				message: 'Login effettuato con successo',
+				data: { username: admin.username, isAdmin: true }
+			} as ApiResponse<any>);
 		}
 
 		return json(

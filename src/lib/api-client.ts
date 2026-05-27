@@ -247,9 +247,10 @@ export async function getAdminUsers() {
 
 export async function createAdminUser(data: {
 	name: string;
-	email: string;
+	username: string;
 	phone: string;
 	password: string;
+	email?: string;
 }) {
 	return apiCall<IUser>('/admin/users', { method: 'POST', body: JSON.stringify(data) });
 }
@@ -277,23 +278,10 @@ export async function deleteWarehouseItem(id: string) {
 
 // ==================== USER CLIENT ENDPOINTS ====================
 
-export async function registerUser(userData: {
-	name: string;
-	email: string;
-	phone: string;
-	password: string;
-	confirmPassword: string;
-}) {
-	return apiCall<IUser>('/users/register', {
-		method: 'POST',
-		body: JSON.stringify(userData)
-	});
-}
-
-export async function loginUser(email: string, password: string) {
+export async function loginUser(username: string, password: string) {
 	return apiCall<IUser>('/users/login', {
 		method: 'POST',
-		body: JSON.stringify({ email, password })
+		body: JSON.stringify({ username, password })
 	});
 }
 

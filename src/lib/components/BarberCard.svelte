@@ -15,7 +15,10 @@
 		<div class="d-flex justify-content-between align-items-start">
 			<div>
 				<h5 class="card-title">{barber.name}</h5>
-				<p class="text-muted mb-2">{barber.email}</p>
+				<p class="text-muted mb-1"><i class="bi bi-person-circle me-1"></i>@{barber.username}</p>
+				{#if barber.email}
+					<p class="text-muted mb-2"><i class="bi bi-envelope me-1"></i>{barber.email}</p>
+				{/if}
 				{#if barber.phone}
 					<p class="text-muted mb-2">
 						<i class="bi bi-telephone"></i>

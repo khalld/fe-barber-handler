@@ -11,16 +11,16 @@ export const GET: RequestHandler = handle(async () => {
 });
 
 export const POST: RequestHandler = handle(async ({ request }) => {
-	const { name, email, phone, password } = await request.json();
+	const { name, username, email, phone, password } = await request.json();
 
-	if (!name || !email || !phone || !password) {
-		return fail('Tutti i campi sono obbligatori', 400);
+	if (!name || !username || !phone || !password) {
+		return fail('Nome, username, telefono e password sono obbligatori', 400);
 	}
 	if (password.length < 6) {
 		return fail('Password minimo 6 caratteri', 400);
 	}
 
-	const user = await UserClientService.registerUser({ name, email, phone, password });
+	const user = await UserClientService.createUser({ name, username, email, phone, password });
 	return ok(user, 201);
 });
 
