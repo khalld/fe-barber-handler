@@ -12,7 +12,8 @@
 	interface UserRecord {
 		_id: string;
 		name: string;
-		email: string;
+		username: string;
+		email?: string;
 		phone: string;
 		appointments: string[];
 		createdAt?: string;
@@ -25,13 +26,14 @@
 	let showModal: boolean = $state(false);
 	let searchQuery: string = $state('');
 
-	let formData = $state({ name: '', email: '', phone: '', password: '' });
+	let formData = $state({ name: '', username: '', email: '', phone: '', password: '' });
 
 	let filteredUsers = $derived(
 		usersList.filter(
 			(u) =>
 				u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				(u.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
 				u.phone.includes(searchQuery)
 		)
 	);
@@ -52,10 +54,10 @@
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
-		const { name, email, phone, password } = formData;
+		const { name, username, phone, password } = formData;
 
-		if (!name || !email || !phone || !password) {
-			toast.warning('Tutti i campi sono obbligatori');
+		if (!name || !username || !phone || !password) {
+			toast.warning('Nome, username, telefono e password sono obbligatori');
 			return;
 		}
 		if (password.length < 6) {
@@ -63,11 +65,17 @@
 			return;
 		}
 
-		const res = await createAdminUser(formData);
+		const res = await createAdminUser({
+			name: formData.name,
+			username: formData.username,
+			email: formData.email || undefined,
+			phone: formData.phone,
+			password: formData.password
+		});
 		if (res.success) {
 			toast.success('Utente creato con successo!');
 			showModal = false;
-			formData = { name: '', email: '', phone: '', password: '' };
+			formData = { name: '', username: '', email: '', phone: '', password: '' };
 			await loadUsers();
 		} else {
 			toast.error(res.error || 'Errore nella creazione');
@@ -92,7 +100,8 @@
 		}
 		const data = usersList.map((u) => ({
 			Nome: u.name,
-			Email: u.email,
+			Username: u.username,
+			Email: u.email || '-',
 			Telefono: u.phone,
 			Prenotazioni: u.appointments?.length ?? 0,
 			Registrato: formatDate(u.createdAt)
@@ -159,6 +168,7 @@
 								<thead class="table-light">
 									<tr>
 										<th>Nome</th>
+										<th>Username</th>
 										<th>Email</th>
 										<th>Telefono</th>
 										<th>Prenotazioni</th>
@@ -180,7 +190,8 @@
 													{user.name}
 												</div>
 											</td>
-											<td>{user.email}</td>
+											<td>{user.username}</td>
+											<td>{user.email || '-'}</td>
 											<td>{user.phone}</td>
 											<td>
 												<span class="badge bg-secondary">{user.appointments?.length ?? 0}</span>
@@ -214,7 +225,7 @@
 		visible={showModal}
 		onClose={() => {
 			showModal = false;
-			formData = { name: '', email: '', phone: '', password: '' };
+			formData = { name: '', username: '', email: '', phone: '', password: '' };
 		}}
 		onSubmit={handleSubmit}
 	>
@@ -230,17 +241,28 @@
 				/>
 			</div>
 			<div class="col-md-6 mb-3">
-				<label for="userEmail" class="form-label">Email</label>
+				<label for="userUsername" class="form-label">Username</label>
+				<input
+					type="text"
+					id="userUsername"
+					class="form-control"
+					bind:value={formData.username}
+					autocomplete="off"
+					required
+				/>
+				<div class="form-text">Identificativo univoco per l'accesso.</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-6 mb-3">
+				<label for="userEmail" class="form-label">Email <span class="text-muted">(opzionale)</span></label>
 				<input
 					type="email"
 					id="userEmail"
 					class="form-control"
 					bind:value={formData.email}
-					required
 				/>
 			</div>
-		</div>
-		<div class="row">
 			<div class="col-md-6 mb-3">
 				<label for="userPhone" class="form-label">Telefono</label>
 				<input

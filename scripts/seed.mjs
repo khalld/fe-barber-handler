@@ -2,8 +2,11 @@
  * Seed script: populates MongoDB with demo data for testing/staging.
  * Run with: npm run seed
  *
- * Idempotent — safe to run multiple times. Uses upsert on email.
+ * Idempotent — safe to run multiple times. Uses upsert on username.
  * All demo passwords: demo123
+ *
+ * Creates real DB accounts (admin, barbers, clients) so there are no
+ * in-memory/mocked users: every login is verified against MongoDB.
  */
 
 import mongoose from 'mongoose';
@@ -22,9 +25,17 @@ if (!MONGODB_URI) {
 // Schema definitions (mirrored from src/lib/db/models to keep seed self-contained)
 // ---------------------------------------------------------------------------
 
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, required: true },
+  email: { type: String, unique: true, sparse: true },
+  isAdmin: { type: Boolean, default: false }
+}, { timestamps: true });
+
 const barberSchema = new mongoose.Schema({
   name: String,
-  email: { type: String, unique: true },
+  username: { type: String, unique: true, lowercase: true, trim: true },
+  email: { type: String, unique: true, sparse: true },
   password: { type: String, select: false },
   phone: String,
   specializations: [String],
@@ -44,13 +55,15 @@ const barberSchema = new mongoose.Schema({
 
 const userClientSchema = new mongoose.Schema({
   name: String,
-  email: { type: String, unique: true, lowercase: true },
+  username: { type: String, unique: true, lowercase: true, trim: true },
+  email: { type: String, unique: true, sparse: true, lowercase: true },
   phone: String,
   password: String,
   appointments: { type: [String], default: [] }
 }, { timestamps: true });
 
-const Barber    = mongoose.models.Barber     || mongoose.model('Barber',     barberSchema);
+const User       = mongoose.models.User       || mongoose.model('User',       userSchema);
+const Barber     = mongoose.models.Barber     || mongoose.model('Barber',     barberSchema);
 const UserClient = mongoose.models.UserClient || mongoose.model('UserClient', userClientSchema);
 
 // ---------------------------------------------------------------------------
@@ -58,6 +71,7 @@ const UserClient = mongoose.models.UserClient || mongoose.model('UserClient', us
 // ---------------------------------------------------------------------------
 
 const DEMO_PASSWORD = 'demo123';
+const ADMIN_USERNAME = (process.env.PUBLIC_DEMO_ADMIN_USERNAME || process.env.ADMIN_USERNAME || 'admin').toLowerCase();
 
 const defaultHours = {
   monday:    { start: '09:00', end: '18:00' },
@@ -72,6 +86,7 @@ const defaultHours = {
 const barbers = [
   {
     name: 'Marco Rossi',
+    username: 'marco',
     email: 'marco@barbershop.demo',
     phone: '+39 320 1234567',
     bio: 'Barbiere con 10 anni di esperienza. Specializzato in tagli classici e barba tradizionale.',
@@ -81,6 +96,7 @@ const barbers = [
   },
   {
     name: 'Luca Ferrari',
+    username: 'luca',
     email: 'luca@barbershop.demo',
     phone: '+39 340 7654321',
     bio: 'Esperto in colorazioni e trattamenti moderni. Sempre aggiornato sulle ultime tendenze.',
@@ -96,11 +112,13 @@ const barbers = [
 const clients = [
   {
     name: 'Cliente Demo',
+    username: 'cliente',
     email: 'cliente@demo.it',
     phone: '+39 333 0000001'
   },
   {
     name: 'Mario Bianchi',
+    username: 'mario',
     email: 'mario.bianchi@demo.it',
     phone: '+39 333 0000002'
   }
@@ -117,40 +135,47 @@ async function seed() {
 
   const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
 
+  // Seed admin (gestore)
+  console.log('🛡️   Creazione gestore demo…');
+  const admin = await User.findOneAndUpdate(
+    { username: ADMIN_USERNAME },
+    { username: ADMIN_USERNAME, password: hashedPassword, isAdmin: true },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+  console.log(`   • ${admin.username} (admin)`);
+
   // Seed barbers
-  console.log('👤  Creazione barbieri demo…');
+  console.log('\n👤  Creazione barbieri demo…');
   for (const b of barbers) {
     const result = await Barber.findOneAndUpdate(
-      { email: b.email },
+      { username: b.username },
       { ...b, password: hashedPassword, isActive: true },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
-    console.log(`   • ${result.name} <${result.email}>`);
+    console.log(`   • ${result.name} (@${result.username})`);
   }
 
   // Seed client users
   console.log('\n👥  Creazione utenti clienti demo…');
   for (const c of clients) {
     const result = await UserClient.findOneAndUpdate(
-      { email: c.email },
+      { username: c.username },
       { ...c, password: hashedPassword },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
-    console.log(`   • ${result.name} <${result.email}>`);
+    console.log(`   • ${result.name} (@${result.username})`);
   }
 
   console.log('\n✅  Seed completato!\n');
-  console.log('┌─────────────────────────────────────────────┐');
-  console.log('│         CREDENZIALI DI TEST                 │');
-  console.log('├────────────────────┬──────────────────────┬─┤');
-  console.log('│ Ruolo              │ Email                │ Password │');
-  console.log('├────────────────────┼──────────────────────┼──────────┤');
-  console.log('│ Gestore (admin)    │ (da ENV)             │ admin    │');
-  console.log('│ Barbiere 1         │ marco@barbershop.demo│ demo123  │');
-  console.log('│ Barbiere 2         │ luca@barbershop.demo │ demo123  │');
-  console.log('│ Cliente 1          │ cliente@demo.it      │ demo123  │');
-  console.log('│ Cliente 2          │ mario.bianchi@demo.it│ demo123  │');
-  console.log('└────────────────────┴──────────────────────┴──────────┘');
+  console.log('┌──────────────────┬────────────┬──────────┐');
+  console.log('│ Ruolo            │ Username   │ Password │');
+  console.log('├──────────────────┼────────────┼──────────┤');
+  console.log(`│ Gestore (admin)  │ ${ADMIN_USERNAME.padEnd(10)} │ demo123  │`);
+  console.log('│ Barbiere 1       │ marco      │ demo123  │');
+  console.log('│ Barbiere 2       │ luca       │ demo123  │');
+  console.log('│ Cliente 1        │ cliente    │ demo123  │');
+  console.log('│ Cliente 2        │ mario      │ demo123  │');
+  console.log('└──────────────────┴────────────┴──────────┘');
 
   await mongoose.disconnect();
 }

@@ -4,7 +4,7 @@
 	import { apiCall } from '$lib/api-client';
 	import { env } from '$env/dynamic/public';
 
-	let email = $state('');
+	let identifier = $state('');
 	let password = $state('');
 	let loading = $state(false);
 	let toastMessage = $state('');
@@ -13,22 +13,22 @@
 
 	const showDemoPanel =
 		!!(env.PUBLIC_DEMO_ADMIN_USERNAME && env.PUBLIC_DEMO_ADMIN_PASSWORD) ||
-		!!(env.PUBLIC_DEMO_BARBER_EMAIL && env.PUBLIC_DEMO_BARBER_PASSWORD);
+		!!(env.PUBLIC_DEMO_BARBER_USERNAME && env.PUBLIC_DEMO_BARBER_PASSWORD);
 
 	function fillDemo(mode: 'admin' | 'barber') {
 		loginMode = mode;
 		if (mode === 'admin') {
-			email = env.PUBLIC_DEMO_ADMIN_USERNAME ?? '';
+			identifier = env.PUBLIC_DEMO_ADMIN_USERNAME ?? '';
 			password = env.PUBLIC_DEMO_ADMIN_PASSWORD ?? '';
 		} else {
-			email = env.PUBLIC_DEMO_BARBER_EMAIL ?? '';
+			identifier = env.PUBLIC_DEMO_BARBER_USERNAME ?? '';
 			password = env.PUBLIC_DEMO_BARBER_PASSWORD ?? '';
 		}
 		handleLogin();
 	}
 
 	async function handleAdminLogin() {
-		if (!email || !password) {
+		if (!identifier || !password) {
 			toastMessage = 'Inserisci username e password';
 			toastType = 'warning';
 			return;
@@ -37,7 +37,7 @@
 		try {
 			const result = await apiCall('/auth/login', {
 				method: 'POST',
-				body: JSON.stringify({ username: email, password })
+				body: JSON.stringify({ username: identifier, password })
 			});
 			if (result.success) {
 				toastMessage = 'Accesso effettuato!';
@@ -53,8 +53,8 @@
 	}
 
 	async function handleBarberLogin() {
-		if (!email || !password) {
-			toastMessage = 'Inserisci email e password';
+		if (!identifier || !password) {
+			toastMessage = 'Inserisci username e password';
 			toastType = 'warning';
 			return;
 		}
@@ -62,7 +62,7 @@
 		try {
 			const result = await apiCall('/barbers/login', {
 				method: 'POST',
-				body: JSON.stringify({ email, password })
+				body: JSON.stringify({ username: identifier, password })
 			});
 			if (result.success) {
 				toastMessage = 'Accesso effettuato!';
@@ -132,12 +132,12 @@
 						<!-- Fields -->
 						<div class="mb-3">
 							<input
-								type={loginMode === 'admin' ? 'text' : 'email'}
+								type="text"
 								class="form-control form-control-lg mb-3"
-								placeholder={loginMode === 'admin' ? 'Username' : 'Email'}
-								bind:value={email}
+								placeholder="Username"
+								bind:value={identifier}
 								disabled={loading}
-								autocomplete={loginMode === 'admin' ? 'username' : 'email'}
+								autocomplete="username"
 							/>
 							<input
 								type="password"
@@ -187,7 +187,7 @@
 											<i class="bi bi-shield-lock me-1"></i>Admin
 										</button>
 									{/if}
-									{#if env.PUBLIC_DEMO_BARBER_EMAIL && env.PUBLIC_DEMO_BARBER_PASSWORD}
+									{#if env.PUBLIC_DEMO_BARBER_USERNAME && env.PUBLIC_DEMO_BARBER_PASSWORD}
 										<button
 											class="btn btn-outline-warning btn-sm flex-fill"
 											onclick={() => fillDemo('barber')}

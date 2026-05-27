@@ -58,7 +58,8 @@ Due pagine di documentazione sono servite dall'app stessa:
 | `PORT`               |     | Porta del server Node (default: `3000`)                       |
 | `HOST`               |     | Indirizzo di ascolto (default: `0.0.0.0`)                     |
 | `APP_PORT`           |     | Porta host mappata sul container (default: `3000`)            |
-| `PUBLIC_DEMO_*`      |     | Credenziali demo per i pulsanti di accesso rapido (vedi `.env`) |
+| `PUBLIC_DEMO_*`      |     | Credenziali demo per i pulsanti di accesso rapido: `PUBLIC_DEMO_ADMIN_USERNAME`/`_PASSWORD`, `PUBLIC_DEMO_BARBER_USERNAME`/`_PASSWORD`, `PUBLIC_DEMO_CLIENT_USERNAME`/`_PASSWORD` |
+| `ADMIN_USERNAME`     |     | Username del gestore creato dal seed (default: `admin`)        |
 
 ---
 
@@ -72,15 +73,20 @@ npm run seed
 docker compose exec app npm run seed
 ```
 
-Il seed è **idempotente** (upsert per email): può essere eseguito più volte senza creare duplicati.
+Il seed è **idempotente** (upsert per username): può essere eseguito più volte senza creare duplicati.
+Tutti gli account (gestore, barbieri, clienti) sono **reali record MongoDB**: non esistono utenti mockati in memoria, ogni login è verificato sul database.
 
-| Ruolo      | URL di accesso   | Email                      | Password   |
-|------------|------------------|----------------------------|------------|
-| Gestore    | `/login`         | `admin`                    | `demo123`  |
-| Barbiere 1 | `/barber-login`  | `marco@barbershop.demo`    | `demo123`  |
-| Barbiere 2 | `/barber-login`  | `luca@barbershop.demo`     | `demo123`  |
-| Cliente 1  | `/client/login`  | `cliente@demo.it`          | `demo123`  |
-| Cliente 2  | `/client/login`  | `mario.bianchi@demo.it`    | `demo123`  |
+L'accesso avviene sempre tramite **username** (non email). L'email è un campo di contatto opzionale.
+
+| Ruolo      | URL di accesso   | Username    | Password   |
+|------------|------------------|-------------|------------|
+| Gestore    | `/login`         | `admin`     | `demo123`  |
+| Barbiere 1 | `/login`         | `marco`     | `demo123`  |
+| Barbiere 2 | `/login`         | `luca`      | `demo123`  |
+| Cliente 1  | `/client/login`  | `cliente`   | `demo123`  |
+| Cliente 2  | `/client/login`  | `mario`     | `demo123`  |
+
+> Non esiste auto-registrazione per i clienti: gli account vengono creati dal gestore dalla pagina **Utenti** (`/users`), così come i barbieri da **Barbieri** (`/barbers`).
 
 ---
 
@@ -213,14 +219,15 @@ La specifica completa e interrogabile è disponibile su **`/api-docs`** (Swagger
 
 | Metodo | Endpoint                | Descrizione                          |
 |--------|-------------------------|--------------------------------------|
-| POST   | `/api/auth/login`       | Login gestore                        |
+| POST   | `/api/auth/login`       | Login gestore (`username` + `password`) |
 | POST   | `/api/auth/logout`      | Logout gestore                       |
 | GET    | `/api/auth/session`     | Sessione corrente                    |
-| POST   | `/api/barbers/login`    | Login barbiere                       |
+| POST   | `/api/barbers/login`    | Login barbiere (`username` + `password`) |
 | POST   | `/api/barbers/logout`   | Logout barbiere                      |
-| POST   | `/api/users/login`      | Login cliente                        |
+| POST   | `/api/users/login`      | Login cliente (`username` + `password`) |
 | POST   | `/api/users/logout`     | Logout cliente                       |
-| POST   | `/api/users/register`   | Registrazione cliente                |
+
+> Non esiste un endpoint di registrazione pubblica: gli account cliente si creano via `POST /api/admin/users` (area gestore).
 
 ### Barbieri (`/api/barbers`)
 
@@ -241,6 +248,8 @@ Content-Type: application/json
 
 {
   "name": "Marco Rossi",
+  "username": "marco",
+  "password": "demo123",
   "email": "marco@barber.it",
   "phone": "3201234567",
   "specializations": ["Taglio", "Barba", "Colore"],
@@ -345,6 +354,8 @@ curl -X POST http://localhost:5173/api/barbers \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Marco Rossi",
+    "username": "marco",
+    "password": "demo123",
     "email": "marco@barber.it",
     "phone": "3201234567",
     "specializations": ["Taglio", "Barba"],

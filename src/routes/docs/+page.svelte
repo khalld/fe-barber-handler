@@ -95,8 +95,8 @@
 							</div>
 							<h5 class="fw-bold">Portale Clienti</h5>
 							<p class="text-muted small mb-0">
-								I clienti possono prenotare un appuntamento con o senza registrazione,
-								e gestire le proprie prenotazioni.
+								I clienti possono prenotare come ospiti, oppure accedere con l'account
+								creato dal gestore per gestire le proprie prenotazioni.
 							</p>
 						</div>
 						<div class="card-footer bg-transparent border-0 px-4 pb-4">
@@ -253,16 +253,16 @@
 				<div class="card-header bg-white border-bottom py-3">
 					<div class="d-flex align-items-center gap-2">
 						<i class="bi bi-people text-primary fs-5"></i>
-						<h5 class="mb-0 fw-semibold">Utenti (Clienti Registrati)</h5>
+						<h5 class="mb-0 fw-semibold">Utenti (Clienti)</h5>
 						<span class="badge bg-primary ms-auto">/users</span>
 					</div>
 				</div>
 				<div class="card-body p-4">
-					<p class="text-muted mb-3">Rubrica dei clienti che hanno creato un account sulla piattaforma.</p>
+					<p class="text-muted mb-3">Rubrica dei clienti. Gli account vengono creati dal gestore: non esiste auto-registrazione.</p>
 					<ul class="list-unstyled mb-0">
-						<li class="d-flex gap-2 mb-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><span>Elenco con nome, email, telefono, numero di prenotazioni effettuate e data registrazione</span></li>
-						<li class="d-flex gap-2 mb-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><span>Ricerca rapida per nome, email o telefono</span></li>
-						<li class="d-flex gap-2 mb-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><span>Crea manualmente un account cliente (utile per clienti fissi)</span></li>
+						<li class="d-flex gap-2 mb-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><span>Elenco con nome, username, email (opzionale), telefono, numero di prenotazioni e data di creazione</span></li>
+						<li class="d-flex gap-2 mb-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><span>Ricerca rapida per nome, username, email o telefono</span></li>
+						<li class="d-flex gap-2 mb-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><span>Crea un account cliente: nome, username, password, telefono ed email opzionale</span></li>
 						<li class="d-flex gap-2 mb-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><span>Elimina un account</span></li>
 						<li class="d-flex gap-2"><i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i><span>Esporta l'elenco in <strong>CSV</strong></span></li>
 					</ul>
@@ -415,25 +415,23 @@
 				</div>
 			</div>
 
-			<!-- Registrazione e login -->
+			<!-- Login -->
 			<div class="card border-0 shadow-sm mb-3">
 				<div class="card-header bg-white border-bottom py-3">
 					<div class="d-flex align-items-center gap-2">
-						<i class="bi bi-person-plus text-success fs-5"></i>
-						<h5 class="mb-0 fw-semibold">Registrazione e Login</h5>
+						<i class="bi bi-box-arrow-in-right text-success fs-5"></i>
+						<h5 class="mb-0 fw-semibold">Login cliente</h5>
 						<span class="badge bg-success ms-auto">/client/login</span>
 					</div>
 				</div>
 				<div class="card-body p-4">
 					<div class="row g-3">
 						<div class="col-md-6">
-							<h6 class="fw-semibold">Registrazione</h6>
-							<p class="text-muted small mb-2">Crea un account con:</p>
+							<h6 class="fw-semibold">Accesso</h6>
+							<p class="text-muted small mb-2">Il cliente accede con username e password. L'account viene creato dal gestore: non è disponibile l'auto-registrazione.</p>
 							<ul class="text-muted small mb-0">
-								<li>Nome completo</li>
-								<li>Email (usata per accedere)</li>
-								<li>Numero di telefono</li>
-								<li>Password (minimo 6 caratteri)</li>
+								<li>Username (identificativo univoco)</li>
+								<li>Password</li>
 							</ul>
 						</div>
 						<div class="col-md-6">
@@ -603,11 +601,11 @@
 									['/appointments','Gestore','Gestione prenotazioni'],
 									['/barbers','Gestore','Gestione barbieri'],
 									['/transactions','Gestore','Registro finanziario'],
-									['/users','Gestore','Gestione clienti registrati'],
+									['/users','Gestore','Gestione clienti'],
 									['/warehouse','Gestore','Inventario magazzino'],
 									['/barber-dashboard','Barbiere','Dashboard personale'],
 									['/barber-profile','Barbiere','Profilo personale'],
-									['/client/login','Cliente','Login e registrazione cliente'],
+									['/client/login','Cliente','Login cliente (account creato dal gestore)'],
 									['/client/book','Cliente / Ospite','Prenotazione senza account (wizard)'],
 									['/client/barbers','Cliente','Prenota con account'],
 									['/client/appointments','Cliente','Le mie prenotazioni'],

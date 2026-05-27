@@ -12,10 +12,17 @@ const userClientSchema = new mongoose.Schema<IUserDocument>(
 			type: String,
 			required: true
 		},
-		email: {
+		username: {
 			type: String,
 			required: true,
 			unique: true,
+			lowercase: true,
+			trim: true
+		},
+		email: {
+			type: String,
+			unique: true,
+			sparse: true,
 			lowercase: true
 		},
 		phone: {
@@ -42,8 +49,8 @@ const userClientSchema = new mongoose.Schema<IUserDocument>(
 	{ timestamps: true }
 );
 
-// Index per email per ricerche veloci
-userClientSchema.index({ email: 1 });
+// Index per username per ricerche veloci durante il login
+userClientSchema.index({ username: 1 });
 
 // Metodo per comparare password
 userClientSchema.methods.comparePassword = async function (plainPassword: string): Promise<boolean> {

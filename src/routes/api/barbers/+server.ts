@@ -36,9 +36,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		const data = await request.json();
 
 		// Validazione base
-		if (!data.name || !data.email || data.hourlyRate === undefined) {
+		if (!data.name || !data.username || data.hourlyRate === undefined) {
 			return apiResponse<null>(
-				{ success: false, error: 'Nome, email e tariffa oraria sono obbligatori' },
+				{ success: false, error: 'Nome, username e tariffa oraria sono obbligatori' },
 				{ status: 400 }
 			);
 		}
