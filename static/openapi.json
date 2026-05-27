@@ -1,0 +1,1504 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Barbershop Handler API",
+    "description": "REST API for the Barbershop management platform. Supports three portals: **Admin** (shop management), **Barber** (personal dashboard), and **Client** (booking). \n\n## Authentication\n- **Admin**: `POST /api/auth/login` → sets `session_id` cookie (7 days)\n- **Barber**: `POST /api/barbers/login` → sets `barber_session_id` + `barber_id` cookies (7 days)\n- **Client**: `POST /api/users/login` → sets `user_session_id` + `user_id` cookies (30 days)\n- **Guest booking**: No auth required — use `POST /api/book`\n\n## Response format\nAll endpoints return a unified JSON envelope:\n```json\n{ \"success\": true, \"data\": {...}, \"message\": \"optional\" }\n{ \"success\": false, \"error\": \"description\" }\n```",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Barbershop Dev",
+      "email": "danilo.leocata@gmail.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5173",
+      "description": "Local development"
+    },
+    {
+      "url": "https://your-domain.com",
+      "description": "Production"
+    }
+  ],
+  "tags": [
+    { "name": "Admin Auth", "description": "Admin authentication (session cookie)" },
+    { "name": "Barber Auth", "description": "Barber authentication (session cookie)" },
+    { "name": "Client Auth", "description": "Client user authentication (session cookie)" },
+    { "name": "Barbers", "description": "Barber CRUD — admin operations" },
+    { "name": "Appointments", "description": "Appointment management — admin & barber operations" },
+    { "name": "Public Booking", "description": "Guest booking — no auth required" },
+    { "name": "Client Portal", "description": "Client-facing booking and appointment endpoints" },
+    { "name": "Dashboard", "description": "Statistics and daily reports" },
+    { "name": "Transactions", "description": "Financial transaction management" },
+    { "name": "Admin Users", "description": "Client user management by admin" },
+    { "name": "Warehouse", "description": "Inventory and stock management" }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Admin Auth"],
+        "summary": "Admin login",
+        "description": "Authenticates the admin with username + password. On success, sets a `session_id` HTTP-only cookie valid for 7 days.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "admin" },
+                  "password": { "type": "string", "format": "password", "example": "secretpass" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful — `session_id` cookie is set",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseObject" },
+                "example": {
+                  "success": true,
+                  "message": "Login effettuato con successo",
+                  "data": { "username": "admin", "isAdmin": true }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Admin Auth"],
+        "summary": "Admin logout",
+        "description": "Clears the `session_id` cookie.",
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" },
+                "example": { "success": true, "message": "Logout effettuato con successo" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/session": {
+      "get": {
+        "tags": ["Admin Auth"],
+        "summary": "Check admin session",
+        "description": "Returns whether the current request has a valid admin session cookie.",
+        "responses": {
+          "200": {
+            "description": "Session status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseObject" },
+                "examples": {
+                  "authenticated": {
+                    "value": { "success": true, "data": { "isAuthenticated": true, "isAdmin": true, "username": "admin" } }
+                  },
+                  "unauthenticated": {
+                    "value": { "success": false, "data": null, "error": "Non autenticato" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/barbers/login": {
+      "post": {
+        "tags": ["Barber Auth"],
+        "summary": "Barber login",
+        "description": "Authenticates a barber by email + password. Sets `barber_session_id` and `barber_id` HTTP-only cookies (7 days).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "mario@barbershop.it" },
+                  "password": { "type": "string", "format": "password", "example": "mypassword" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful — `barber_session_id` and `barber_id` cookies are set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Barber" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/barbers/logout": {
+      "post": {
+        "tags": ["Barber Auth"],
+        "summary": "Barber logout",
+        "description": "Clears `barber_session_id` and `barber_id` cookies.",
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/login": {
+      "post": {
+        "tags": ["Client Auth"],
+        "summary": "Client user login",
+        "description": "Authenticates a registered client. Sets `user_session_id` and `user_id` HTTP-only cookies (30 days). Password is excluded from the response.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "client@example.com" },
+                  "password": { "type": "string", "format": "password", "example": "mypassword" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/User" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/users/logout": {
+      "post": {
+        "tags": ["Client Auth"],
+        "summary": "Client user logout",
+        "description": "Clears `user_session_id` and `user_id` cookies.",
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/register": {
+      "post": {
+        "tags": ["Client Auth"],
+        "summary": "Register a new client account",
+        "description": "Creates a new client user account. Validates email format and password confirmation.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "phone", "password", "confirmPassword"],
+                "properties": {
+                  "name": { "type": "string", "example": "Mario Rossi" },
+                  "email": { "type": "string", "format": "email", "example": "mario@example.com" },
+                  "phone": { "type": "string", "example": "+39 333 1234567" },
+                  "password": { "type": "string", "format": "password", "minLength": 6, "example": "secret123" },
+                  "confirmPassword": { "type": "string", "format": "password", "example": "secret123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/User" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/barbers": {
+      "get": {
+        "tags": ["Barbers"],
+        "summary": "List barbers",
+        "description": "Returns all barbers. Pass `?id=` to fetch a single barber by ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "MongoDB ObjectId of a specific barber",
+            "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of barbers (or a single barber when `id` is provided)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            { "$ref": "#/components/schemas/Barber" },
+                            { "type": "array", "items": { "$ref": "#/components/schemas/Barber" } }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "post": {
+        "tags": ["Barbers"],
+        "summary": "Create a barber",
+        "description": "Creates a new barber account. Requires admin session.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BarberInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Barber created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Barber" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "patch": {
+        "tags": ["Barbers"],
+        "summary": "Update a barber",
+        "description": "Partially updates a barber record. `_id` must be included in the request body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  { "$ref": "#/components/schemas/BarberInput" },
+                  {
+                    "required": ["_id"],
+                    "properties": {
+                      "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Barber updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Barber" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Barbers"],
+        "summary": "Deactivate a barber",
+        "description": "Sets `isActive = false` on the barber. Does not permanently delete the record.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Barber deactivated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/barbers/{id}": {
+      "put": {
+        "tags": ["Barbers"],
+        "summary": "Update barber profile (by ID)",
+        "description": "Full profile update for a barber by path param ID. Fields `_id`, `password`, `createdAt`, `updatedAt` are ignored. Used by the barber profile page.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BarberInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Barber" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/barbers/{id}/change-password": {
+      "post": {
+        "tags": ["Barbers"],
+        "summary": "Change barber password",
+        "description": "Validates the current password with bcrypt before setting the new one.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["currentPassword", "newPassword"],
+                "properties": {
+                  "currentPassword": { "type": "string", "format": "password", "example": "oldpass" },
+                  "newPassword": { "type": "string", "format": "password", "minLength": 6, "example": "newpass123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/appointments": {
+      "get": {
+        "tags": ["Appointments"],
+        "summary": "List / query appointments",
+        "description": "Flexible query endpoint. Behaviour depends on which query params are provided:\n- `availability=1 + barberId + date` → returns available time slots (ISO intervals)\n- `date` only → all non-cancelled appointments for that day\n- `barberId` → appointments for that barber (with optional date range)\n- No special params → all appointments with optional `status`, `startDate`, `endDate` filters",
+        "parameters": [
+          { "name": "barberId", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"] } },
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date", "example": "2025-01-01" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date", "example": "2025-12-31" } },
+          { "name": "date", "in": "query", "description": "Fetch appointments or availability for a specific date (YYYY-MM-DD)", "schema": { "type": "string", "format": "date", "example": "2025-06-15" } },
+          { "name": "availability", "in": "query", "description": "Set to any truthy value together with `barberId` and `date` to get free time slots", "schema": { "type": "string", "example": "1" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointments list or availability slots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            { "type": "array", "items": { "$ref": "#/components/schemas/Appointment" } },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "availableSlots": {
+                                  "type": "array",
+                                  "items": { "$ref": "#/components/schemas/TimeSlot" }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Appointments"],
+        "summary": "Create an appointment",
+        "description": "Creates a new appointment. Checks for time conflicts on the selected barber before saving.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AppointmentInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Appointment created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Appointment" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "patch": {
+        "tags": ["Appointments"],
+        "summary": "Update an appointment",
+        "description": "Partially updates an appointment. `_id` must be included in the body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  { "$ref": "#/components/schemas/AppointmentInput" },
+                  {
+                    "required": ["_id"],
+                    "properties": { "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abc5678" } }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Appointment updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Appointment" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Appointments"],
+        "summary": "Complete or cancel an appointment",
+        "description": "- `action=complete` → sets status `completed` + paymentStatus `paid`\n- `action=cancel` (default) → sets status `cancelled` + paymentStatus `refunded`",
+        "parameters": [
+          { "name": "id", "in": "query", "required": true, "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abc5678" } },
+          { "name": "action", "in": "query", "schema": { "type": "string", "enum": ["complete", "cancel"], "default": "cancel" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Appointment" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/book": {
+      "post": {
+        "tags": ["Public Booking"],
+        "summary": "Guest appointment booking",
+        "description": "Creates an appointment without requiring any account or authentication. Used by the public booking wizard at `/client/book`. `endTime` is computed server-side from `startTime + duration`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["barberId", "clientName", "clientPhone", "service", "duration", "startTime"],
+                "properties": {
+                  "barberId": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" },
+                  "clientName": { "type": "string", "example": "Mario Rossi" },
+                  "clientPhone": { "type": "string", "example": "+39 333 1234567" },
+                  "clientEmail": { "type": "string", "format": "email", "example": "mario@example.com" },
+                  "service": { "type": "string", "example": "Taglio" },
+                  "duration": { "type": "integer", "description": "Duration in minutes", "example": 30 },
+                  "startTime": { "type": "string", "format": "date-time", "example": "2025-06-15T10:00:00.000Z" },
+                  "price": { "type": "number", "example": 15 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Appointment" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/users/available-barbers": {
+      "get": {
+        "tags": ["Client Portal"],
+        "summary": "List active barbers (public)",
+        "description": "Returns all barbers with `isActive = true`. No authentication required. Used in the public booking wizard.",
+        "responses": {
+          "200": {
+            "description": "Active barbers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Barber" } } } }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/available-slots": {
+      "get": {
+        "tags": ["Client Portal"],
+        "summary": "Available time slots for a barber",
+        "description": "Returns 30-minute slots that are not yet booked for the given barber on the given date. Respects the barber's working hours and skips past slots. Returns empty array if the barber is closed that day.",
+        "parameters": [
+          { "name": "barberId", "in": "query", "required": true, "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" } },
+          { "name": "date", "in": "query", "required": true, "description": "Date in YYYY-MM-DD format", "schema": { "type": "string", "format": "date", "example": "2025-06-15" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available time slots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    {
+                      "properties": {
+                        "data": { "type": "array", "items": { "$ref": "#/components/schemas/SlotHHMM" } }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/users/appointments": {
+      "get": {
+        "tags": ["Client Portal"],
+        "summary": "Get appointments for a client user",
+        "parameters": [
+          { "name": "userId", "in": "query", "required": true, "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abcdef0" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User's appointments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Appointment" } } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "post": {
+        "tags": ["Client Portal"],
+        "summary": "Book an appointment (logged-in client)",
+        "description": "Creates an appointment linked to a client account. Also updates the user's appointments list.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId", "barberId", "clientName", "clientPhone", "serviceType", "duration", "dateTime"],
+                "properties": {
+                  "userId": { "type": "string", "example": "64a1b2c3d4e5f6789abcdef0" },
+                  "barberId": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" },
+                  "clientName": { "type": "string", "example": "Mario Rossi" },
+                  "clientPhone": { "type": "string", "example": "+39 333 1234567" },
+                  "clientEmail": { "type": "string", "format": "email" },
+                  "serviceType": { "type": "string", "example": "Taglio + Barba" },
+                  "duration": { "type": "integer", "description": "Duration in minutes", "example": 50 },
+                  "dateTime": { "type": "string", "format": "date-time", "example": "2025-06-15T10:00:00.000Z" },
+                  "totalPrice": { "type": "number", "example": 25 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Appointment created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Appointment" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Client Portal"],
+        "summary": "Cancel a client's appointment",
+        "description": "Sets appointment status to `cancelled` and removes it from the user's list.",
+        "parameters": [
+          { "name": "appointmentId", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "userId", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment cancelled",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Dashboard statistics",
+        "description": "Returns different datasets depending on query params:\n- `report=YYYY-MM-DD` → daily report for that date\n- `barber={id}` (+ optional `daysRange`) → barber-specific dashboard (last N days, default 30)\n- No params → today's global shop statistics",
+        "parameters": [
+          { "name": "barber", "in": "query", "description": "Barber ID for barber-specific dashboard", "schema": { "type": "string" } },
+          { "name": "daysRange", "in": "query", "description": "Number of past days to include (used with `barber`)", "schema": { "type": "integer", "default": 30, "example": 30 } },
+          { "name": "report", "in": "query", "description": "Date for daily report (YYYY-MM-DD)", "schema": { "type": "string", "format": "date", "example": "2025-06-15" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            { "$ref": "#/components/schemas/DashboardStats" },
+                            { "$ref": "#/components/schemas/BarberDashboard" },
+                            { "$ref": "#/components/schemas/DailyReport" }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/transactions": {
+      "get": {
+        "tags": ["Transactions"],
+        "summary": "List / query transactions",
+        "description": "Flexible query. Special modes:\n- `byCategory=1` → totals grouped by category (for the given date range, default last 30 days)\n- `dailyTotals=1` → daily income/expense totals (for the given date range)\n- Default → list of transactions with optional filters",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["income", "expense"] } },
+          { "name": "category", "in": "query", "schema": { "type": "string", "enum": ["appointment_payment", "product_sale", "salary", "supplies", "rent", "utilities", "maintenance", "other"] } },
+          { "name": "barberId", "in": "query", "schema": { "type": "string" } },
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "byCategory", "in": "query", "description": "Group totals by category", "schema": { "type": "string", "example": "1" } },
+          { "name": "dailyTotals", "in": "query", "description": "Return daily income/expense totals", "schema": { "type": "string", "example": "1" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transactions or aggregated data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    {
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            { "type": "array", "items": { "$ref": "#/components/schemas/Transaction" } },
+                            { "type": "array", "items": { "$ref": "#/components/schemas/CategoryTotal" } },
+                            { "type": "array", "items": { "$ref": "#/components/schemas/DailyTotal" } }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Transactions"],
+        "summary": "Create a transaction",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TransactionInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transaction created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Transaction" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "patch": {
+        "tags": ["Transactions"],
+        "summary": "Update a transaction",
+        "description": "`_id` must be included in the body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  { "$ref": "#/components/schemas/TransactionInput" },
+                  {
+                    "required": ["_id"],
+                    "properties": { "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abcabc1" } }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transaction updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Transaction" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Transactions"],
+        "summary": "Delete a transaction",
+        "parameters": [
+          { "name": "id", "in": "query", "required": true, "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abcabc1" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction deleted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": ["Admin Users"],
+        "summary": "List all client users",
+        "description": "Returns all registered client users. Passwords are excluded. Requires admin session.",
+        "responses": {
+          "200": {
+            "description": "Client user list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/User" } } } }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin Users"],
+        "summary": "Create a client user (admin)",
+        "description": "Creates a new client user account. Minimum password length: 6 characters.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "phone", "password"],
+                "properties": {
+                  "name": { "type": "string", "example": "Luca Verdi" },
+                  "email": { "type": "string", "format": "email", "example": "luca@example.com" },
+                  "phone": { "type": "string", "example": "+39 347 9876543" },
+                  "password": { "type": "string", "format": "password", "minLength": 6, "example": "pass123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/User" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin Users"],
+        "summary": "Delete a client user",
+        "parameters": [
+          { "name": "id", "in": "query", "required": true, "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abcdef0" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/warehouse": {
+      "get": {
+        "tags": ["Warehouse"],
+        "summary": "List warehouse items",
+        "description": "Returns all inventory items. Pass `?lowStock=1` to return only items where `quantity <= minQuantity`.",
+        "parameters": [
+          { "name": "lowStock", "in": "query", "description": "Filter to low-stock items only", "schema": { "type": "string", "example": "1" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Warehouse items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/WarehouseItem" } } } }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Warehouse"],
+        "summary": "Create a warehouse item",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WarehouseItemInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/WarehouseItem" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "patch": {
+        "tags": ["Warehouse"],
+        "summary": "Update a warehouse item",
+        "description": "`_id` must be included in the body along with the fields to update.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  { "$ref": "#/components/schemas/WarehouseItemInput" },
+                  {
+                    "required": ["_id"],
+                    "properties": { "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abcffe1" } }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponseObject" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/WarehouseItem" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Warehouse"],
+        "summary": "Delete a warehouse item",
+        "parameters": [
+          { "name": "id", "in": "query", "required": true, "schema": { "type": "string", "example": "64a1b2c3d4e5f6789abcffe1" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item deleted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponseEmpty" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiResponseObject": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": { "type": "object" },
+          "message": { "type": "string" },
+          "error": { "type": "string" }
+        }
+      },
+      "ApiResponseEmpty": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "Operazione completata con successo" }
+        }
+      },
+      "WorkingHours": {
+        "type": "object",
+        "properties": {
+          "start": { "type": "string", "example": "09:00", "description": "Opening time HH:MM (empty string = closed)" },
+          "end": { "type": "string", "example": "18:00", "description": "Closing time HH:MM (empty string = closed)" }
+        }
+      },
+      "Barber": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" },
+          "name": { "type": "string", "example": "Giovanni Ferraro" },
+          "email": { "type": "string", "format": "email", "example": "giovanni@barbershop.it" },
+          "phone": { "type": "string", "example": "+39 340 1234567" },
+          "specializations": { "type": "array", "items": { "type": "string" }, "example": ["Taglio", "Barba"] },
+          "bio": { "type": "string", "example": "Esperto in tecniche di rasatura classica" },
+          "profileImage": { "type": "string", "example": "https://example.com/avatar.jpg" },
+          "isActive": { "type": "boolean", "example": true },
+          "hourlyRate": { "type": "number", "example": 30 },
+          "workingHours": {
+            "type": "object",
+            "properties": {
+              "monday": { "$ref": "#/components/schemas/WorkingHours" },
+              "tuesday": { "$ref": "#/components/schemas/WorkingHours" },
+              "wednesday": { "$ref": "#/components/schemas/WorkingHours" },
+              "thursday": { "$ref": "#/components/schemas/WorkingHours" },
+              "friday": { "$ref": "#/components/schemas/WorkingHours" },
+              "saturday": { "$ref": "#/components/schemas/WorkingHours" },
+              "sunday": { "$ref": "#/components/schemas/WorkingHours" }
+            }
+          },
+          "daysOff": { "type": "array", "items": { "type": "string", "format": "date-time" } },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "BarberInput": {
+        "type": "object",
+        "required": ["name", "email", "hourlyRate"],
+        "properties": {
+          "name": { "type": "string", "example": "Giovanni Ferraro" },
+          "email": { "type": "string", "format": "email", "example": "giovanni@barbershop.it" },
+          "password": { "type": "string", "format": "password", "example": "pass123" },
+          "phone": { "type": "string", "example": "+39 340 1234567" },
+          "specializations": { "type": "array", "items": { "type": "string" }, "example": ["Taglio", "Barba"] },
+          "bio": { "type": "string" },
+          "hourlyRate": { "type": "number", "example": 30 },
+          "isActive": { "type": "boolean", "default": true },
+          "workingHours": {
+            "type": "object",
+            "properties": {
+              "monday": { "$ref": "#/components/schemas/WorkingHours" },
+              "tuesday": { "$ref": "#/components/schemas/WorkingHours" },
+              "wednesday": { "$ref": "#/components/schemas/WorkingHours" },
+              "thursday": { "$ref": "#/components/schemas/WorkingHours" },
+              "friday": { "$ref": "#/components/schemas/WorkingHours" },
+              "saturday": { "$ref": "#/components/schemas/WorkingHours" },
+              "sunday": { "$ref": "#/components/schemas/WorkingHours" }
+            }
+          }
+        }
+      },
+      "Appointment": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abc5678" },
+          "barberId": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" },
+          "clientName": { "type": "string", "example": "Mario Rossi" },
+          "clientEmail": { "type": "string", "format": "email", "example": "mario@example.com" },
+          "clientPhone": { "type": "string", "example": "+39 333 1234567" },
+          "service": { "type": "string", "example": "Taglio + Barba" },
+          "duration": { "type": "integer", "description": "Duration in minutes", "example": 50 },
+          "startTime": { "type": "string", "format": "date-time", "example": "2025-06-15T10:00:00.000Z" },
+          "endTime": { "type": "string", "format": "date-time", "example": "2025-06-15T10:50:00.000Z" },
+          "price": { "type": "number", "example": 25 },
+          "notes": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"], "example": "pending" },
+          "paymentStatus": { "type": "string", "enum": ["pending", "paid", "refunded"], "example": "pending" },
+          "paymentMethod": { "type": "string", "enum": ["cash", "card", "transfer"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AppointmentInput": {
+        "type": "object",
+        "required": ["barberId", "clientName", "clientPhone", "startTime", "endTime", "price"],
+        "properties": {
+          "barberId": { "type": "string", "example": "64a1b2c3d4e5f6789abc1234" },
+          "clientName": { "type": "string", "example": "Mario Rossi" },
+          "clientEmail": { "type": "string", "format": "email" },
+          "clientPhone": { "type": "string", "example": "+39 333 1234567" },
+          "service": { "type": "string", "example": "Taglio" },
+          "duration": { "type": "integer", "example": 30 },
+          "startTime": { "type": "string", "format": "date-time", "example": "2025-06-15T10:00:00.000Z" },
+          "endTime": { "type": "string", "format": "date-time", "example": "2025-06-15T10:30:00.000Z" },
+          "price": { "type": "number", "example": 15 },
+          "notes": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled"], "default": "pending" },
+          "paymentStatus": { "type": "string", "enum": ["pending", "paid", "refunded"], "default": "pending" },
+          "paymentMethod": { "type": "string", "enum": ["cash", "card", "transfer"] }
+        }
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abcabc1" },
+          "type": { "type": "string", "enum": ["income", "expense"], "example": "income" },
+          "category": { "type": "string", "enum": ["appointment_payment", "product_sale", "salary", "supplies", "rent", "utilities", "maintenance", "other"], "example": "appointment_payment" },
+          "amount": { "type": "number", "example": 25 },
+          "description": { "type": "string", "example": "Taglio + Barba - Mario Rossi" },
+          "barberId": { "type": "string" },
+          "appointmentId": { "type": "string" },
+          "paymentMethod": { "type": "string", "enum": ["cash", "card", "transfer"] },
+          "notes": { "type": "string" },
+          "date": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TransactionInput": {
+        "type": "object",
+        "required": ["type", "category", "amount", "description"],
+        "properties": {
+          "type": { "type": "string", "enum": ["income", "expense"], "example": "expense" },
+          "category": { "type": "string", "enum": ["appointment_payment", "product_sale", "salary", "supplies", "rent", "utilities", "maintenance", "other"], "example": "supplies" },
+          "amount": { "type": "number", "example": 120 },
+          "description": { "type": "string", "example": "Acquisto shampoo professionale" },
+          "barberId": { "type": "string" },
+          "appointmentId": { "type": "string" },
+          "paymentMethod": { "type": "string", "enum": ["cash", "card", "transfer"] },
+          "notes": { "type": "string" },
+          "date": { "type": "string", "format": "date-time" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abcdef0" },
+          "name": { "type": "string", "example": "Mario Rossi" },
+          "email": { "type": "string", "format": "email", "example": "mario@example.com" },
+          "phone": { "type": "string", "example": "+39 333 1234567" },
+          "appointments": { "type": "array", "items": { "type": "string" }, "description": "Appointment IDs" },
+          "registeredAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WarehouseItem": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "64a1b2c3d4e5f6789abcffe1" },
+          "name": { "type": "string", "example": "Shampoo professionale 1L" },
+          "category": { "type": "string", "enum": ["shampoo", "tools", "disposables", "color", "other"], "example": "shampoo" },
+          "quantity": { "type": "integer", "example": 5 },
+          "minQuantity": { "type": "integer", "example": 2, "description": "Reorder threshold" },
+          "unit": { "type": "string", "example": "pz" },
+          "purchasePrice": { "type": "number", "example": 18.50 },
+          "supplier": { "type": "string", "example": "Distribuzione Nord SRL" },
+          "notes": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WarehouseItemInput": {
+        "type": "object",
+        "required": ["name", "category", "quantity", "unit", "purchasePrice"],
+        "properties": {
+          "name": { "type": "string", "example": "Shampoo professionale 1L" },
+          "category": { "type": "string", "enum": ["shampoo", "tools", "disposables", "color", "other"], "example": "shampoo" },
+          "quantity": { "type": "integer", "example": 10 },
+          "minQuantity": { "type": "integer", "default": 0, "example": 2 },
+          "unit": { "type": "string", "example": "pz" },
+          "purchasePrice": { "type": "number", "example": 18.50 },
+          "supplier": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      },
+      "TimeSlot": {
+        "type": "object",
+        "description": "ISO-format availability interval (from /api/appointments?availability=1)",
+        "properties": {
+          "start": { "type": "string", "format": "date-time", "example": "2025-06-15T09:00:00.000Z" },
+          "end": { "type": "string", "format": "date-time", "example": "2025-06-15T09:30:00.000Z" }
+        }
+      },
+      "SlotHHMM": {
+        "type": "object",
+        "description": "30-minute booking slot with HH:MM formatted times (from /api/users/available-slots)",
+        "properties": {
+          "time": { "type": "string", "example": "09:00", "description": "Slot start in HH:MM" },
+          "endTime": { "type": "string", "example": "09:30", "description": "Slot end in HH:MM" }
+        }
+      },
+      "DashboardStats": {
+        "type": "object",
+        "description": "Global today stats returned when no query params are provided",
+        "properties": {
+          "totalAppointmentsToday": { "type": "integer" },
+          "completedAppointmentsToday": { "type": "integer" },
+          "totalRevenueToday": { "type": "number" },
+          "totalExpensesMonth": { "type": "number" },
+          "activeBarbers": { "type": "integer" },
+          "upcomingAppointments": { "type": "array", "items": { "$ref": "#/components/schemas/Appointment" } },
+          "topBarbers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "barberId": { "type": "string" },
+                "name": { "type": "string" },
+                "appointmentsCount": { "type": "integer" },
+                "revenue": { "type": "number" }
+              }
+            }
+          },
+          "monthlyRevenue": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date" },
+                "amount": { "type": "number" }
+              }
+            }
+          },
+          "appointmentsByService": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "service": { "type": "string" },
+                "count": { "type": "integer" }
+              }
+            }
+          }
+        }
+      },
+      "BarberDashboard": {
+        "type": "object",
+        "description": "Barber-specific dashboard returned when `barber` query param is provided",
+        "properties": {
+          "appointmentsToday": { "type": "integer" },
+          "completedToday": { "type": "integer" },
+          "revenueToday": { "type": "number" },
+          "totalAppointments": { "type": "integer" },
+          "completedAppointments": { "type": "integer" },
+          "totalRevenue": { "type": "number" },
+          "todayAppointments": { "type": "array", "items": { "$ref": "#/components/schemas/Appointment" } },
+          "revenueHistory": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date" },
+                "amount": { "type": "number" }
+              }
+            }
+          },
+          "topServices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "count": { "type": "integer" },
+                "revenue": { "type": "number" }
+              }
+            }
+          }
+        }
+      },
+      "DailyReport": {
+        "type": "object",
+        "description": "Daily report returned when `report` query param is provided",
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "totalAppointments": { "type": "integer" },
+          "completedAppointments": { "type": "integer" },
+          "totalRevenue": { "type": "number" },
+          "appointments": { "type": "array", "items": { "$ref": "#/components/schemas/Appointment" } }
+        }
+      },
+      "CategoryTotal": {
+        "type": "object",
+        "description": "Category aggregate (returned by /api/transactions?byCategory=1)",
+        "properties": {
+          "category": { "type": "string" },
+          "total": { "type": "number" },
+          "count": { "type": "integer" }
+        }
+      },
+      "DailyTotal": {
+        "type": "object",
+        "description": "Daily income/expense totals (returned by /api/transactions?dailyTotals=1)",
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "income": { "type": "number" },
+          "expenses": { "type": "number" }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid input or missing required fields",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiResponseObject" },
+            "example": { "success": false, "error": "Campi obbligatori mancanti" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Invalid credentials or missing session",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiResponseObject" },
+            "example": { "success": false, "error": "Credenziali non valide" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiResponseObject" },
+            "example": { "success": false, "error": "Risorsa non trovata" }
+          }
+        }
+      }
+    }
+  }
+}
