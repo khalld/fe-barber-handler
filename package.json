@@ -1,7 +1,7 @@
 {
 	"name": "fe-barber-handler",
 	"private": true,
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -10,7 +10,8 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"seed": "node scripts/seed.mjs"
+		"seed": "node scripts/seed.mjs",
+		"create-admin": "node scripts/create-admin.mjs"
 	},
 	"dependencies": {
 		"bcryptjs": "^2.4.3",

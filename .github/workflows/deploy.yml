@@ -48,3 +48,27 @@ jobs:
           api_key: ${{ secrets.RENDER_API_KEY }}
           clear_cache: true   # force a clean build (no cached Docker layers)
           wait_deploy: true   # block the job until Render reports success/failure
+
+  bootstrap-admin:
+    name: Ensure admin account
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Upsert admin user in production DB
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: npm run create-admin
