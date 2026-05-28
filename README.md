@@ -15,13 +15,14 @@ Stack: **SvelteKit 5** + **TypeScript**, **Bootstrap 5.3**, **MongoDB** (Mongoos
 3. [Credenziali di test](#credenziali-di-test)
 4. [Docker](#docker)
 5. [Comandi utili](#comandi-utili)
-6. [Struttura del progetto](#struttura-del-progetto)
-7. [Architettura](#architettura)
-8. [API REST](#api-rest)
-9. [Esempi di test (curl)](#esempi-di-test-curl)
-10. [Utilizzo dei servizi](#utilizzo-dei-servizi-typescript)
-11. [Note tecniche e validazioni](#note-tecniche-e-validazioni)
-12. [Roadmap](#roadmap)
+6. [Test e CI](#test-e-ci)
+7. [Struttura del progetto](#struttura-del-progetto)
+8. [Architettura](#architettura)
+9. [API REST](#api-rest)
+10. [Esempi di test (curl)](#esempi-di-test-curl)
+11. [Utilizzo dei servizi](#utilizzo-dei-servizi-typescript)
+12. [Note tecniche e validazioni](#note-tecniche-e-validazioni)
+13. [Roadmap](#roadmap)
 
 ---
 
@@ -76,6 +77,20 @@ docker compose exec app npm run seed
 Il seed è **idempotente** (upsert per username): può essere eseguito più volte senza creare duplicati.
 Tutti gli account (gestore, barbieri, clienti) sono **reali record MongoDB**: non esistono utenti mockati in memoria, ogni login è verificato sul database.
 
+Se ti serve **solo** il gestore (senza i dati demo), usa lo script dedicato — crea l'account
+unicamente se non esiste, leggendo le credenziali dall'ambiente:
+
+```bash
+ADMIN_USERNAME=admin ADMIN_PASSWORD=tuaPassword npm run create-admin
+# oppure inline:
+npm run create-admin -- admin tuaPassword
+```
+
+In pipeline (`deploy.yml` → job `bootstrap-admin`) questo script viene eseguito
+automaticamente dopo ogni deploy come rete di sicurezza: se il database fosse vuoto
+ricrea il gestore, altrimenti non fa nulla. Richiede i secret `MONGODB_URI`,
+`ADMIN_USERNAME`, `ADMIN_PASSWORD` configurati nell'ambiente GitHub `production`.
+
 L'accesso avviene sempre tramite **username** (non email). L'email è un campo di contatto opzionale.
 
 | Ruolo      | URL di accesso   | Username    | Password   |
@@ -112,12 +127,36 @@ docker compose down                           # ferma il servizio
 ## Comandi utili
 
 ```bash
-npm run dev        # dev server (porta 5173)
-npm run build      # build produzione
-npm run preview    # anteprima build (porta 4173)
-npm run check      # type-check TypeScript + Svelte
-npm run seed       # inserisce dati demo in MongoDB
+npm run dev          # dev server (porta 5173)
+npm run build        # build produzione
+npm run preview      # anteprima build (porta 4173)
+npm run check        # type-check TypeScript + Svelte
+npm run test         # unit test in watch mode (Vitest)
+npm run test:run     # unit test one-shot (usato in CI)
+npm run seed         # inserisce dati demo in MongoDB
+npm run create-admin # crea l'account gestore se mancante
 ```
+
+---
+
+## Test e CI
+
+I test unitari girano con **[Vitest](https://vitest.dev)** in ambiente Node, senza
+mock pesanti: coprono le funzioni pure (`src/lib/utils.ts`) e gli helper di risposta
+API (`src/lib/server/api.ts`, incluso il wrapper `handle()` con la sua mappatura
+degli errori). I file dei test sono accanto al codice e seguono la convenzione
+`*.test.ts`.
+
+```bash
+npm run test       # watch mode in sviluppo
+npm run test:run   # one-shot — usato dalla pipeline
+```
+
+**Quality gate in pipeline.** Il workflow `.github/workflows/deploy.yml` ha la
+catena `npm ci → npm run check → npm run test:run → npm run build` nel job `ci`.
+Il job `deploy` ha `needs: ci` e il job `bootstrap-admin` ha `needs: deploy`,
+quindi un test rosso ferma l'intera catena: nessun deploy su Render, nessun
+upsert dell'admin.
 
 ---
 
