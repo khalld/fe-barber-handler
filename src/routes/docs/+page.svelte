@@ -8,7 +8,7 @@
 		<a class="navbar-brand fw-bold fs-5" href="/">
 			<i class="bi bi-scissors me-2"></i>Barbershop Handler
 		</a>
-		<span class="badge bg-secondary">Guida Utente v1.0</span>
+		<span class="badge bg-secondary">Guida Utente v1.1</span>
 	</div>
 </nav>
 
@@ -37,6 +37,9 @@
 				</a>
 				<a href="#cliente" class="btn btn-outline-light btn-sm rounded-pill">
 					<i class="bi bi-people me-1"></i>Portale Clienti
+				</a>
+				<a href="#roadmap" class="btn btn-outline-warning btn-sm rounded-pill">
+					<i class="bi bi-rocket-takeoff me-1"></i>Roadmap
 				</a>
 				<a href="#servizi" class="btn btn-outline-light btn-sm rounded-pill">
 					<i class="bi bi-scissors me-1"></i>Servizi
@@ -309,7 +312,7 @@
 
 			<div class="alert border-0 mb-4" style="background:#fff3cd">
 				<i class="bi bi-info-circle me-2"></i>
-				Accedi da <strong>/login</strong>, seleziona il tab <strong>Barbiere</strong> e usa le credenziali personali (email + password impostata dal gestore).
+				Accedi da <strong>/login</strong>, seleziona il tab <strong>Barbiere</strong> e usa le credenziali personali (<strong>username</strong> + password impostata dal gestore).
 			</div>
 
 			<div class="row g-3">
@@ -578,6 +581,70 @@
 			</div>
 		</section>
 
+		<!-- ─── ROADMAP / FUNZIONALITÀ FUTURE ──────────────────────── -->
+		<section id="roadmap" class="mb-5 scroll-mt">
+			<div class="d-flex align-items-center gap-2 mb-4">
+				<div class="rounded-3 p-2" style="background:#fff3cd">
+					<i class="bi bi-rocket-takeoff fs-5 text-warning"></i>
+				</div>
+				<h2 class="h4 fw-bold mb-0">Funzionalità in arrivo (Roadmap)</h2>
+			</div>
+
+			<!-- Stato della versione attuale -->
+			<div class="alert border-0 mb-4" style="background:#fff8e1">
+				<div class="d-flex gap-2">
+					<i class="bi bi-info-circle text-warning mt-1 flex-shrink-0"></i>
+					<div>
+						<strong>Cosa è già attivo e cosa no in questa versione demo.</strong>
+						<ul class="mb-0 mt-2 small">
+							<li>L'esportazione degli elenchi è disponibile in formato <strong>CSV</strong> (apribile con Excel, Numbers o Google Fogli). L'export nativo <code>.xlsx</code> è previsto.</li>
+							<li>Le <strong>notifiche email</strong> (conferma e promemoria) non sono ancora attive: lo stato della prenotazione si consulta dall'area personale del cliente.</li>
+							<li>Lo stato <strong>Confermata</strong> esiste a sistema, ma l'azione di conferma manuale del gestore è in arrivo. Oggi una prenotazione passa da <em>In attesa</em> a <em>Completata</em> oppure <em>Cancellata</em>.</li>
+							<li>Gli account cliente vengono creati dal gestore: <strong>non</strong> esiste auto-registrazione.</li>
+							<li>Le prenotazioni online dei clienti esterni sono <strong>sempre attive</strong>: non è ancora possibile sospenderle temporaneamente.</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			<div class="row g-3">
+				{#each [
+					['bi-envelope-paper','Notifiche email','Conferma della prenotazione al cliente, promemoria dell\'appuntamento e avviso al barbiere a ogni nuova richiesta.','Prioritaria','danger'],
+					['bi-check2-square','Conferma manuale prenotazioni','Pulsante per gestore e barbiere per passare una prenotazione da "In attesa" a "Confermata".','Prioritaria','danger'],
+					['bi-toggles','Attiva/disattiva prenotazioni online','Interruttore per sospendere temporaneamente le prenotazioni dei clienti esterni (ferie, agenda piena, chiusura).','Pianificata','primary'],
+					['bi-chat-dots','Promemoria SMS / WhatsApp','Promemoria automatico il giorno prima dell\'appuntamento sul telefono del cliente.','Pianificata','primary'],
+					['bi-credit-card','Pagamenti online / acconto','Incasso o caparra al momento della prenotazione tramite circuito di pagamento (es. Stripe).','In valutazione','secondary'],
+					['bi-key','Recupero password','Reset autonomo della password via email per clienti e barbieri.','Pianificata','primary'],
+					['bi-calendar-x','Ferie e chiusure straordinarie','Oltre agli orari settimanali, blocco di singoli giorni o periodi di chiusura del barbiere.','Pianificata','primary'],
+					['bi-star','Recensioni e valutazioni','I clienti valutano il servizio ricevuto; la media è visibile sul profilo del barbiere.','In valutazione','secondary'],
+					['bi-file-earmark-excel','Export Excel (.xlsx)','Esportazione nativa in formato Excel, in aggiunta al CSV già disponibile.','Pianificata','primary'],
+					['bi-clock-history','Storico attività (audit log)','Le azioni su prenotazioni, transazioni e barbieri sono già registrate a backend: manca la pagina per consultarle.','In sviluppo','info'],
+					['bi-calendar-week','Vista calendario / agenda','Agenda settimanale degli appuntamenti per gestore e barbiere, oltre all\'elenco attuale.','In valutazione','secondary'],
+					['bi-person-plus','Auto-registrazione cliente','Possibilità, attivabile dal gestore, che il cliente crei da sé il proprio account.','In valutazione','secondary']
+				] as [icon, title, desc, badge, color]}
+					<div class="col-md-6 col-lg-4">
+						<div class="card border-0 shadow-sm h-100">
+							<div class="card-body p-4">
+								<div class="d-flex justify-content-between align-items-start mb-2">
+									<div class="rounded-3 p-2 d-inline-flex" style="background:#f1f3f5">
+										<i class="bi {icon} fs-5 text-secondary"></i>
+									</div>
+									<span class="badge text-bg-{color}">{badge}</span>
+								</div>
+								<h6 class="fw-bold mb-1">{title}</h6>
+								<p class="text-muted small mb-0">{desc}</p>
+							</div>
+						</div>
+					</div>
+				{/each}
+			</div>
+
+			<p class="text-muted small mt-3 mb-0">
+				<i class="bi bi-lightbulb me-1 text-warning"></i>
+				Le priorità possono variare in base alle esigenze del negozio. Hai un'idea da aggiungere? Parlane con il team.
+			</p>
+		</section>
+
 		<!-- ─── ACCESSI RAPIDI ─────────────────────────────────────── -->
 		<section class="mb-5">
 			<h2 class="h4 fw-bold mb-4 d-flex align-items-center gap-2">
@@ -609,6 +676,7 @@
 									['/client/book','Cliente / Ospite','Prenotazione senza account (wizard)'],
 									['/client/barbers','Cliente','Prenota con account'],
 									['/client/appointments','Cliente','Le mie prenotazioni'],
+									['/docs','Tutti','Guida e documentazione funzionale (questa pagina)'],
 									['/api-docs','Sviluppatori','Documentazione API (Swagger UI)'],
 								] as [url, who, desc]}
 									<tr>
@@ -629,7 +697,7 @@
 	<!-- Footer -->
 	<footer class="py-4 text-center text-muted small" style="border-top:1px solid #dee2e6; background:#fff;">
 		<i class="bi bi-scissors me-1"></i>
-		<strong>Barbershop Handler</strong> &nbsp;·&nbsp; Documentazione v1.0 &nbsp;·&nbsp;
+		<strong>Barbershop Handler</strong> &nbsp;·&nbsp; Documentazione v1.1 &nbsp;·&nbsp;
 		<a href="/api-docs" class="text-muted">API Docs</a>
 	</footer>
 

@@ -222,8 +222,9 @@
 					<!-- Info -->
 					<div class="alert alert-info">
 						<i class="bi bi-info-circle me-2"></i>
-						<strong>Nota:</strong> La prenotazione è in sospeso finché il barbiere non la conferma.
-						Riceverai una conferma via email.
+						<strong>Nota:</strong> La prenotazione resta <strong>in attesa</strong> finché il negozio
+						non la conferma. Potrai seguirne lo stato nella sezione
+						<a href="/client/appointments">Le mie prenotazioni</a>.
 					</div>
 				</div>
 			</div>

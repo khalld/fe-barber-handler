@@ -33,7 +33,7 @@
 
 	function getStatusLabel(status: string) {
 		const labels: Record<string, string> = {
-			pending: 'In Sospeso',
+			pending: 'In attesa',
 			confirmed: 'Confermata',
 			completed: 'Completata',
 			cancelled: 'Cancellata'

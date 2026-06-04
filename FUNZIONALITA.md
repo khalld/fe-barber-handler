@@ -21,7 +21,7 @@ Accesso riservato al titolare del negozio. Visione completa su tutta l'attività
 - Modifica di una prenotazione esistente
 - Segna un appuntamento come **Completato** (il pagamento viene registrato automaticamente)
 - Cancellazione di un appuntamento
-- Esportazione dell'elenco in formato Excel/CSV
+- Esportazione dell'elenco in formato CSV (apribile con Excel)
 
 ### Barbieri
 - Elenco dei collaboratori con stato attivo o inattivo
@@ -29,7 +29,7 @@ Accesso riservato al titolare del negozio. Visione completa su tutta l'attività
 - Impostazione degli orari di lavoro per ogni giorno della settimana (con possibilità di indicare giorno di chiusura)
 - Modifica dei dati in qualsiasi momento
 - Disattivazione di un barbiere (non appare più ai clienti, ma i dati vengono conservati)
-- Esportazione dell'elenco in formato Excel/CSV
+- Esportazione dell'elenco in formato CSV (apribile con Excel)
 
 ### Transazioni
 - Registro di tutte le entrate e le uscite del negozio
@@ -37,14 +37,14 @@ Accesso riservato al titolare del negozio. Visione completa su tutta l'attività
 - **Uscite:** stipendi, forniture, affitto, utenze, manutenzione
 - Filtri per tipo (entrata/uscita), categoria, barbiere e intervallo di date
 - Aggiunta, modifica ed eliminazione di qualsiasi voce
-- Esportazione in formato Excel/CSV
+- Esportazione in formato CSV (apribile con Excel)
 
 ### Utenti (Clienti)
 - Elenco dei clienti, con nome, username, email (opzionale), telefono e numero di prenotazioni
 - Ricerca rapida per nome, username, email o telefono
 - Creazione manuale di un account cliente (nome, username, password, telefono ed email opzionale) — **non esiste auto-registrazione**
 - Eliminazione di un account
-- Esportazione in formato Excel/CSV
+- Esportazione in formato CSV (apribile con Excel)
 
 ### Magazzino
 - Inventario dei prodotti e materiali suddiviso per categoria: shampoo/prodotti, attrezzi, monouso, colori, altro
@@ -122,3 +122,28 @@ Gli slot disponibili vengono calcolati automaticamente in base agli orari di lav
 | **Confermata** | Appuntamento confermato dal gestore |
 | **Completata** | Servizio eseguito, pagamento registrato |
 | **Cancellata** | Annullata dal cliente o dal gestore |
+
+> **Nota sulla versione attuale:** lo stato **Confermata** è previsto a sistema, ma l'azione di conferma manuale da parte del gestore è in arrivo (vedi Roadmap). Oggi una prenotazione passa da *In attesa* direttamente a *Completata* oppure *Cancellata*.
+
+---
+
+## Funzionalità in arrivo (Roadmap)
+
+Funzioni non ancora presenti nella demo, in ordine di priorità indicativa.
+
+| Funzionalità | Stato | Descrizione |
+|---|---|---|
+| **Notifiche email** | Prioritaria | Conferma della prenotazione al cliente, promemoria dell'appuntamento e avviso al barbiere a ogni nuova richiesta. *(Oggi non viene inviata alcuna email.)* |
+| **Conferma manuale prenotazioni** | Prioritaria | Azione per gestore/barbiere per portare una prenotazione da *In attesa* a *Confermata*. |
+| **Attiva/disattiva prenotazioni online** | Pianificata | Interruttore per sospendere temporaneamente le prenotazioni dei clienti esterni (ferie, agenda piena, chiusura). |
+| **Promemoria SMS / WhatsApp** | Pianificata | Promemoria automatico il giorno prima dell'appuntamento. |
+| **Recupero password** | Pianificata | Reset autonomo della password via email per clienti e barbieri. |
+| **Ferie e chiusure straordinarie** | Pianificata | Blocco di singoli giorni o periodi, oltre agli orari settimanali. |
+| **Export Excel (.xlsx)** | Pianificata | Esportazione nativa in formato Excel, in aggiunta al CSV attuale. |
+| **Pagamenti online / acconto** | In valutazione | Incasso o caparra al momento della prenotazione (es. Stripe/PayPal). |
+| **Recensioni e valutazioni** | In valutazione | I clienti valutano il servizio; media visibile sul profilo del barbiere. |
+| **Vista calendario / agenda** | In valutazione | Agenda settimanale degli appuntamenti, oltre all'elenco attuale. |
+| **Auto-registrazione cliente** | In valutazione | Possibilità, attivabile dal gestore, che il cliente crei da sé l'account. |
+| **Storico attività (audit log)** | In sviluppo | Le azioni su prenotazioni, transazioni e barbieri sono già registrate a backend: manca la pagina per consultarle. |
+
+La stessa roadmap è consultabile dall'app nella pagina **Guida** (`/docs`, sezione *Funzionalità in arrivo*).

@@ -34,6 +34,7 @@
 		{ label: 'Transazioni', href: '/transactions', icon: 'bi-cash-coin' },
 		{ label: 'Utenti', href: '/users', icon: 'bi-people' },
 		{ label: 'Magazzino', href: '/warehouse', icon: 'bi-box-seam' },
+		{ label: 'Guida', href: '/docs', icon: 'bi-book' },
 		{ label: 'API Docs', href: '/api-docs', icon: 'bi-code-square' }
 	];
 

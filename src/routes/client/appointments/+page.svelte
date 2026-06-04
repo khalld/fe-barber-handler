@@ -85,7 +85,7 @@
 				return 'Annullata';
 			case 'pending':
 			default:
-				return 'In Sospeso';
+				return 'In attesa';
 		}
 	}
 
