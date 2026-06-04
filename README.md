@@ -69,7 +69,7 @@ Due pagine di documentazione sono servite dall'app stessa:
 
 ## Credenziali di test
 
-Dopo il primo deploy, esegui il seed per creare gli utenti demo (tutti con password `demo123`):
+Dopo il primo deploy, esegui il seed per creare gli utenti demo (tutti con password `password`):
 
 ```bash
 npm run seed
@@ -82,13 +82,16 @@ Tutti gli account (gestore, barbieri, clienti) sono **reali record MongoDB**: no
 
 L'accesso avviene sempre tramite **username** (non email). L'email è un campo di contatto opzionale.
 
-| Ruolo      | URL di accesso   | Username    | Password   |
-|------------|------------------|-------------|------------|
-| Gestore    | `/login`         | `admin`     | `demo123`  |
-| Barbiere 1 | `/login`         | `marco`     | `demo123`  |
-| Barbiere 2 | `/login`         | `luca`      | `demo123`  |
-| Cliente 1  | `/client/login`  | `cliente`   | `demo123`  |
-| Cliente 2  | `/client/login`  | `mario`     | `demo123`  |
+> I pulsanti **Accesso rapido demo** sulla pagina `/login` accedono direttamente come `admin`/`password` e `barber`/`password`.
+
+| Ruolo         | URL di accesso   | Username    | Password   |
+|---------------|------------------|-------------|------------|
+| Gestore       | `/login`         | `admin`     | `password` |
+| Barbiere demo | `/login`         | `barber`    | `password` |
+| Barbiere 1    | `/login`         | `marco`     | `password` |
+| Barbiere 2    | `/login`         | `luca`      | `password` |
+| Cliente 1     | `/client/login`  | `cliente`   | `password` |
+| Cliente 2     | `/client/login`  | `mario`     | `password` |
 
 > Non esiste auto-registrazione per i clienti: gli account vengono creati dal gestore dalla pagina **Utenti** (`/users`), così come i barbieri da **Barbieri** (`/barbers`).
 

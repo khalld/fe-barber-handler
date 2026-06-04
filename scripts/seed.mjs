@@ -3,7 +3,7 @@
  * Run with: npm run seed
  *
  * Idempotent — safe to run multiple times. Uses upsert on username.
- * All demo passwords: demo123
+ * All demo passwords default to "password" (override with DEMO_PASSWORD).
  *
  * Creates real DB accounts (admin, barbers, clients) so there are no
  * in-memory/mocked users: every login is verified against MongoDB.
@@ -70,8 +70,13 @@ const UserClient = mongoose.models.UserClient || mongoose.model('UserClient', us
 // Seed data
 // ---------------------------------------------------------------------------
 
-const DEMO_PASSWORD = 'demo123';
+// Password demo condivisa (override con DEMO_PASSWORD). Le credenziali di admin
+// e barbiere sono allineate ai pulsanti "Accesso rapido demo" della pagina /login.
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || 'password';
 const ADMIN_USERNAME = (process.env.PUBLIC_DEMO_ADMIN_USERNAME || process.env.ADMIN_USERNAME || 'admin').toLowerCase();
+const ADMIN_PASSWORD = process.env.PUBLIC_DEMO_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || DEMO_PASSWORD;
+const BARBER_USERNAME = (process.env.PUBLIC_DEMO_BARBER_USERNAME || process.env.BARBER_USERNAME || 'barber').toLowerCase();
+const BARBER_PASSWORD = process.env.PUBLIC_DEMO_BARBER_PASSWORD || process.env.BARBER_PASSWORD || DEMO_PASSWORD;
 
 const defaultHours = {
   monday:    { start: '09:00', end: '18:00' },
@@ -84,6 +89,17 @@ const defaultHours = {
 };
 
 const barbers = [
+  {
+    name: 'Barbiere Demo',
+    username: BARBER_USERNAME,
+    email: 'barber@barbershop.demo',
+    phone: '+39 300 0000000',
+    bio: 'Barbiere demo per l\'accesso rapido dalla pagina di login.',
+    specializations: ['Taglio', 'Barba'],
+    hourlyRate: 30,
+    workingHours: defaultHours,
+    password: BARBER_PASSWORD
+  },
   {
     name: 'Marco Rossi',
     username: 'marco',
@@ -133,13 +149,14 @@ async function seed() {
   await mongoose.connect(MONGODB_URI);
   console.log('✅  Connesso.\n');
 
-  const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const demoHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const adminHash = ADMIN_PASSWORD === DEMO_PASSWORD ? demoHash : await bcrypt.hash(ADMIN_PASSWORD, 10);
 
   // Seed admin (gestore)
   console.log('🛡️   Creazione gestore demo…');
   const admin = await User.findOneAndUpdate(
     { username: ADMIN_USERNAME },
-    { username: ADMIN_USERNAME, password: hashedPassword, isAdmin: true },
+    { username: ADMIN_USERNAME, password: adminHash, isAdmin: true },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
   console.log(`   • ${admin.username} (admin)`);
@@ -147,9 +164,11 @@ async function seed() {
   // Seed barbers
   console.log('\n👤  Creazione barbieri demo…');
   for (const b of barbers) {
+    const { password: rawPassword, ...rest } = b;
+    const password = rawPassword ? await bcrypt.hash(rawPassword, 10) : demoHash;
     const result = await Barber.findOneAndUpdate(
       { username: b.username },
-      { ...b, password: hashedPassword, isActive: true },
+      { ...rest, password, isActive: true },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     console.log(`   • ${result.name} (@${result.username})`);
@@ -160,7 +179,7 @@ async function seed() {
   for (const c of clients) {
     const result = await UserClient.findOneAndUpdate(
       { username: c.username },
-      { ...c, password: hashedPassword },
+      { ...c, password: demoHash },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     console.log(`   • ${result.name} (@${result.username})`);
@@ -170,11 +189,12 @@ async function seed() {
   console.log('┌──────────────────┬────────────┬──────────┐');
   console.log('│ Ruolo            │ Username   │ Password │');
   console.log('├──────────────────┼────────────┼──────────┤');
-  console.log(`│ Gestore (admin)  │ ${ADMIN_USERNAME.padEnd(10)} │ demo123  │`);
-  console.log('│ Barbiere 1       │ marco      │ demo123  │');
-  console.log('│ Barbiere 2       │ luca       │ demo123  │');
-  console.log('│ Cliente 1        │ cliente    │ demo123  │');
-  console.log('│ Cliente 2        │ mario      │ demo123  │');
+  console.log(`│ Gestore (admin)  │ ${ADMIN_USERNAME.padEnd(10)} │ ${ADMIN_PASSWORD.padEnd(8)} │`);
+  console.log(`│ Barbiere (demo)  │ ${BARBER_USERNAME.padEnd(10)} │ ${BARBER_PASSWORD.padEnd(8)} │`);
+  console.log(`│ Barbiere 1       │ marco      │ ${DEMO_PASSWORD.padEnd(8)} │`);
+  console.log(`│ Barbiere 2       │ luca       │ ${DEMO_PASSWORD.padEnd(8)} │`);
+  console.log(`│ Cliente 1        │ cliente    │ ${DEMO_PASSWORD.padEnd(8)} │`);
+  console.log(`│ Cliente 2        │ mario      │ ${DEMO_PASSWORD.padEnd(8)} │`);
   console.log('└──────────────────┴────────────┴──────────┘');
 
   await mongoose.disconnect();
