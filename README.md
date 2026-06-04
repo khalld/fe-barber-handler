@@ -124,11 +124,11 @@ npm run build      # build produzione
 npm run preview    # anteprima build (porta 4173)
 npm run check      # type-check TypeScript + Svelte
 npm run seed       # inserisce dati demo in MongoDB
-npm run create-admin   # crea l'admin (ADMIN_USERNAME/ADMIN_PASSWORD) se mancante
-npm run create-barber  # crea il barbiere di default (BARBER_USERNAME/BARBER_PASSWORD) se mancante
+npm run create-admin   # crea/aggiorna l'admin (ADMIN_USERNAME/ADMIN_PASSWORD)
+npm run create-barber  # crea/aggiorna il barbiere di default (BARBER_USERNAME/BARBER_PASSWORD)
 ```
 
-> `create-admin` e `create-barber` sono **idempotenti** (non toccano un account già esistente) e vengono eseguiti automaticamente dopo ogni deploy dal workflow `deploy.yml`, usando i secret GitHub `ADMIN_USERNAME`/`ADMIN_PASSWORD` e `BARBER_USERNAME`/`BARBER_PASSWORD`.
+> `create-admin` e `create-barber` fanno **upsert**: creano l'account se manca, altrimenti **reimpostano la password** al valore del secret (così le credenziali corrispondono sempre dopo ogni deploy). Vengono eseguiti automaticamente dal workflow `deploy.yml`, usando i secret GitHub `ADMIN_USERNAME`/`ADMIN_PASSWORD` e `BARBER_USERNAME`/`BARBER_PASSWORD`.
 
 ---
 

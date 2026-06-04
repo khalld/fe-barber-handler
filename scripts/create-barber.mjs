@@ -2,9 +2,10 @@
  * Create a default barber account if missing.
  * Run with: npm run create-barber
  *
- * Idempotent — safe to run multiple times. If a barber with the given
- * username already exists, this script leaves it untouched (no password
- * reset). Run it after wiping the DB or as a post-deploy safety net.
+ * Idempotent upsert — safe to run multiple times. Creates the barber if
+ * missing, otherwise resets its password to the configured value so the
+ * login credentials always match the secrets after every deploy. Existing
+ * profile fields (name, rate, hours) are preserved.
  *
  * Credentials are read from the environment (no hardcoded values):
  *   BARBER_USERNAME   (optional, default: "barber")
@@ -84,28 +85,26 @@ async function run() {
   console.log('✅  Connesso.\n');
 
   const existing = await Barber.findOne({ username });
-  if (existing) {
-    console.log(`ℹ️   Barbiere "${username}" già presente — nessuna modifica.`);
-    console.log('    (Per resettare la password elimina il barbiere o esegui un update manuale.)');
-    await mongoose.disconnect();
-    return;
-  }
-
   const hashedPassword = await bcrypt.hash(password, 10);
-  const barber = await Barber.create({
-    name,
-    username,
-    password: hashedPassword,
-    isActive: true,
-    hourlyRate: 30,
-    specializations: ['Taglio', 'Barba'],
-    workingHours: defaultHours
-  });
 
-  console.log('✂️   Barbiere creato:');
-  console.log(`   • nome: ${barber.name}`);
-  console.log(`   • username: ${barber.username}\n`);
-  console.log('Ora il barbiere può accedere dalla pagina /login (modalità Barbiere).');
+  const barber = await Barber.findOneAndUpdate(
+    { username },
+    {
+      $set: { password: hashedPassword, isActive: true },
+      $setOnInsert: {
+        name,
+        hourlyRate: 30,
+        specializations: ['Taglio', 'Barba'],
+        workingHours: defaultHours
+      }
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  console.log(existing
+    ? `✂️   Barbiere "${barber.username}" aggiornato (password reimpostata).`
+    : `✂️   Barbiere "${barber.username}" creato (${barber.name}).`);
+  console.log('\nOra il barbiere può accedere dalla pagina /login (modalità Barbiere).');
 
   await mongoose.disconnect();
 }

@@ -2,9 +2,9 @@
  * Create the admin/gestore account if missing.
  * Run with: npm run create-admin
  *
- * Idempotent — safe to run multiple times. If an account with the given
- * username already exists, this script leaves it untouched (no password
- * reset). Run it after wiping the DB or as a post-deploy safety net.
+ * Idempotent upsert — safe to run multiple times. Creates the account if
+ * missing, otherwise resets its password to the configured value so the
+ * login credentials always match the secrets after every deploy.
  *
  * Credentials are read from the environment (no hardcoded values):
  *   ADMIN_USERNAME   (optional, default: "admin")
@@ -55,19 +55,18 @@ async function run() {
   console.log('✅  Connesso.\n');
 
   const existing = await User.findOne({ username });
-  if (existing) {
-    console.log(`ℹ️   Account "${username}" già presente — nessuna modifica.`);
-    console.log('    (Per resettare la password elimina l\'utente o esegui un update manuale.)');
-    await mongoose.disconnect();
-    return;
-  }
-
   const hashedPassword = await bcrypt.hash(password, 10);
-  const admin = await User.create({ username, password: hashedPassword, isAdmin: true });
 
-  console.log('🛡️   Account gestore creato:');
-  console.log(`   • username: ${admin.username}\n`);
-  console.log('Ora puoi accedere dalla pagina /login.');
+  const admin = await User.findOneAndUpdate(
+    { username },
+    { $set: { password: hashedPassword, isAdmin: true } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  console.log(existing
+    ? `🛡️   Account gestore "${admin.username}" aggiornato (password reimpostata).`
+    : `🛡️   Account gestore "${admin.username}" creato.`);
+  console.log('\nOra puoi accedere dalla pagina /login.');
 
   await mongoose.disconnect();
 }
