@@ -58,8 +58,12 @@ Due pagine di documentazione sono servite dall'app stessa:
 | `PORT`               |     | Porta del server Node (default: `3000`)                       |
 | `HOST`               |     | Indirizzo di ascolto (default: `0.0.0.0`)                     |
 | `APP_PORT`           |     | Porta host mappata sul container (default: `3000`)            |
-| `PUBLIC_DEMO_*`      |     | Credenziali demo per i pulsanti di accesso rapido: `PUBLIC_DEMO_ADMIN_USERNAME`/`_PASSWORD`, `PUBLIC_DEMO_BARBER_USERNAME`/`_PASSWORD`, `PUBLIC_DEMO_CLIENT_USERNAME`/`_PASSWORD` |
-| `ADMIN_USERNAME`     |     | Username del gestore creato dal seed (default: `admin`)        |
+| `PUBLIC_DEMO_*`      |     | Credenziali dei pulsanti di accesso rapido (sempre visibili): **Admin** = `admin`/`password`, **Barbiere** = `barber`/`password`. Override con `PUBLIC_DEMO_ADMIN_USERNAME`/`_PASSWORD` e `PUBLIC_DEMO_BARBER_USERNAME`/`_PASSWORD` (esiste anche `PUBLIC_DEMO_CLIENT_*`) |
+| `ADMIN_USERNAME`     |     | Username dell'admin creato da `create-admin` / seed (default: `admin`) |
+| `ADMIN_PASSWORD`     |     | Password dell'admin per `create-admin` (min 6 caratteri)      |
+| `BARBER_USERNAME`    |     | Username del barbiere creato da `create-barber` (default: `barber`) |
+| `BARBER_PASSWORD`    |     | Password del barbiere per `create-barber` (min 6 caratteri)   |
+| `BARBER_NAME`        |     | Nome visualizzato del barbiere di default (default: `Barbiere Demo`) |
 
 ---
 
@@ -117,7 +121,11 @@ npm run build      # build produzione
 npm run preview    # anteprima build (porta 4173)
 npm run check      # type-check TypeScript + Svelte
 npm run seed       # inserisce dati demo in MongoDB
+npm run create-admin   # crea l'admin (ADMIN_USERNAME/ADMIN_PASSWORD) se mancante
+npm run create-barber  # crea il barbiere di default (BARBER_USERNAME/BARBER_PASSWORD) se mancante
 ```
+
+> `create-admin` e `create-barber` sono **idempotenti** (non toccano un account già esistente) e vengono eseguiti automaticamente dopo ogni deploy dal workflow `deploy.yml`, usando i secret GitHub `ADMIN_USERNAME`/`ADMIN_PASSWORD` e `BARBER_USERNAME`/`BARBER_PASSWORD`.
 
 ---
 

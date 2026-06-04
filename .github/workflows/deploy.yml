@@ -50,7 +50,7 @@ jobs:
           wait_deploy: true   # block the job until Render reports success/failure
 
   bootstrap-admin:
-    name: Ensure admin account
+    name: Ensure admin & barber accounts
     needs: deploy
     runs-on: ubuntu-latest
     environment: production
@@ -72,3 +72,10 @@ jobs:
           ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: npm run create-admin
+
+      - name: Upsert default barber in production DB
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          BARBER_USERNAME: ${{ secrets.BARBER_USERNAME }}
+          BARBER_PASSWORD: ${{ secrets.BARBER_PASSWORD }}
+        run: npm run create-barber

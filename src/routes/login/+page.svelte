@@ -11,18 +11,21 @@
 	let toastType: 'success' | 'danger' | 'warning' | 'info' = $state('info');
 	let loginMode: 'admin' | 'barber' = $state('admin');
 
-	const showDemoPanel =
-		!!(env.PUBLIC_DEMO_ADMIN_USERNAME && env.PUBLIC_DEMO_ADMIN_PASSWORD) ||
-		!!(env.PUBLIC_DEMO_BARBER_USERNAME && env.PUBLIC_DEMO_BARBER_PASSWORD);
+	// Quick-access demo buttons are always available. Defaults: admin/password
+	// and barber/password (override via PUBLIC_DEMO_ADMIN_*/PUBLIC_DEMO_BARBER_*).
+	const demoAdminUsername = env.PUBLIC_DEMO_ADMIN_USERNAME || 'admin';
+	const demoAdminPassword = env.PUBLIC_DEMO_ADMIN_PASSWORD || 'password';
+	const demoBarberUsername = env.PUBLIC_DEMO_BARBER_USERNAME || 'barber';
+	const demoBarberPassword = env.PUBLIC_DEMO_BARBER_PASSWORD || 'password';
 
 	function fillDemo(mode: 'admin' | 'barber') {
 		loginMode = mode;
 		if (mode === 'admin') {
-			identifier = env.PUBLIC_DEMO_ADMIN_USERNAME ?? '';
-			password = env.PUBLIC_DEMO_ADMIN_PASSWORD ?? '';
+			identifier = demoAdminUsername;
+			password = demoAdminPassword;
 		} else {
-			identifier = env.PUBLIC_DEMO_BARBER_USERNAME ?? '';
-			password = env.PUBLIC_DEMO_BARBER_PASSWORD ?? '';
+			identifier = demoBarberUsername;
+			password = demoBarberPassword;
 		}
 		handleLogin();
 	}
@@ -172,33 +175,27 @@
 							</a>
 						</div>
 
-						{#if showDemoPanel}
-							<div class="border-top pt-3 mt-2">
-								<p class="text-muted small text-center mb-2">
-									<i class="bi bi-lightning-charge me-1 text-warning"></i>Accesso rapido demo
-								</p>
-								<div class="d-flex gap-2">
-									{#if env.PUBLIC_DEMO_ADMIN_USERNAME && env.PUBLIC_DEMO_ADMIN_PASSWORD}
-										<button
-											class="btn btn-outline-warning btn-sm flex-fill"
-											onclick={() => fillDemo('admin')}
-											disabled={loading}
-										>
-											<i class="bi bi-shield-lock me-1"></i>Admin
-										</button>
-									{/if}
-									{#if env.PUBLIC_DEMO_BARBER_USERNAME && env.PUBLIC_DEMO_BARBER_PASSWORD}
-										<button
-											class="btn btn-outline-warning btn-sm flex-fill"
-											onclick={() => fillDemo('barber')}
-											disabled={loading}
-										>
-											<i class="bi bi-person-badge me-1"></i>Barbiere
-										</button>
-									{/if}
-								</div>
+						<div class="border-top pt-3 mt-2">
+							<p class="text-muted small text-center mb-2">
+								<i class="bi bi-lightning-charge me-1 text-warning"></i>Accesso rapido demo
+							</p>
+							<div class="d-flex gap-2">
+								<button
+									class="btn btn-outline-warning btn-sm flex-fill"
+									onclick={() => fillDemo('admin')}
+									disabled={loading}
+								>
+									<i class="bi bi-shield-lock me-1"></i>Admin
+								</button>
+								<button
+									class="btn btn-outline-warning btn-sm flex-fill"
+									onclick={() => fillDemo('barber')}
+									disabled={loading}
+								>
+									<i class="bi bi-person-badge me-1"></i>Barbiere
+								</button>
 							</div>
-						{/if}
+						</div>
 					</div>
 				</div>
 			</div>
